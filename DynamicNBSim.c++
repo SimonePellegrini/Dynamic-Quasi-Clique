@@ -1,12 +1,11 @@
-#ifndef NAIVE_ALGO
-#define NAIVE_ALGO
+#ifndef DYNAMICNBSIM
+#define DYNAMICNBSIM
 #include <fstream>
 #include <math.h>
 #include <iostream>
 #include <vector>
 #include <unordered_set>
 #include <set>
-
 
 using namespace std;
 
@@ -29,9 +28,9 @@ class DynamicNBSim
         void Insert(int u, int v);
         double ct_score(int v1, int v2);
         int getBestCliqueSize();
-        double sift_num(int node);
 };
 
+//funzione per calcolare il containment score
 double DynamicNBSim::ct_score(int v1, int v2) {
     int res = 0;
     unordered_set<int> st;
@@ -42,21 +41,6 @@ double DynamicNBSim::ct_score(int v1, int v2) {
     }
     if (st.count(v2)) res++;
     return (double)res / (double)NeighSize[v1];
-}
-
-double DynamicNBSim::sift_num(int node) {
-    int res = 0;
-    
-    for (int v : graph[node]) {
-        if (ct_score(node,v) >= gamma) res++;
-    }
-
-    double tmp = (double)res / (double)(NeighSize[node]);
-    if(tmp>=b){
-        return res+1;
-    }
-    return 0;
- 
 }
 
 int DynamicNBSim::getBestCliqueSize(){
@@ -113,7 +97,7 @@ void DynamicNBSim::Insert(int u,int v){
             //ricalcolo t(w,x) e aggiorno le quasi-clique di conseguenza
             containmentScore[w][x] = (containmentScore[w][x]*NeighSize[w]+1)/NeighSize[w];
             if(containmentScore[w][x]>=gamma && !(quasiClique[w].count(x))){
-                //aggiorno la chiave nella coda con priorità
+                //aggiorno la chiave associata al nodo w nella coda con priorità
                 pq.erase({quasiClique[w].size(), w});
                 quasiClique[w].insert(x);
                 quasiCliqueSize[w]++;
@@ -138,7 +122,8 @@ void DynamicNBSim::Insert(int u,int v){
     graph[v].insert(u);
     containmentScore[u][v] = ct_score(u,v);
     containmentScore[v][u] = ct_score(v,u);
-    //aggiorno le chiavi associate alle clique nella coda con priorità
+    
+    //aggiorno le chiavi associate ai nodi u e v nella coda con priorità
     pq.erase({quasiCliqueSize[v], v});
     if(containmentScore[v][u]>=gamma){ 
         quasiClique[v].insert(u);

@@ -3,7 +3,7 @@
 #include "DynamicNBSim.c++"
 #include <random>
 #include <chrono>
-#include "creditsAlgo.cpp"
+#include "CreditsAlgo.cpp"
 #include <sstream>  
 #include <cstdlib>  
 #include <algorithm> 
@@ -31,6 +31,7 @@ void read_graph(string filename) {
 }
 
 void gridSearch(string fileName){
+    //parametri utilizzati nella grid search
     int eta_param[] = {500,1250,2000};
     int phi_param[] = {3,9,27};
     int delta_param[] = {75,150,225,300};
@@ -65,7 +66,7 @@ void gridSearch(string fileName){
                 for(int j = 0; j<5; j++){
                     int count = 0;
                     int i = 0;
-                    auto c_a = creditsAlgo(n,m,eta,phi,delta,0.9,0.6,512);
+                    auto c_a = CreditsAlgo(n,m,eta,phi,delta,0.9,0.6,512);
                     auto start = chrono::high_resolution_clock::now();
                     for(auto x: graph){
                         c_a.add_edge(x.first,x.second);
@@ -92,7 +93,7 @@ void gridSearch(string fileName){
         for(auto phi: phi_param){
             for(auto delta: delta_param){
                 confronto_densità << "( eta = "<<eta<<" / phi = "<<phi<<" / delta = " << delta<<" )"<<endl;
-                auto c_a = creditsAlgo(n,m,eta,phi,delta,0.9,0.6,512);
+                auto c_a = CreditsAlgo(n,m,eta,phi,delta,0.9,0.6,512);
                 int count = 0;
                 int s_rate = 0.1*m;
                 int i = 0;
@@ -144,7 +145,7 @@ void getSoluzioneCreditsAlgo(string fileName, int n, int m,int eta_default,int p
     unordered_map<int,vector<double>> densità;
     unordered_map<int,vector<double>> soluzioni;
     for(int j=0; j<5; j++){
-        auto c_a = creditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
+        auto c_a = CreditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
         int i = 0;
         for(auto x: graph){
             c_a.add_edge(x.first,x.second);
@@ -202,23 +203,28 @@ void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_r
     int i=0;
     double tot_time=0;
     ofstream speed_up("../Plotting/data/"+fileName+"/speedup.txt");
+    ofstream tempoNBSim("../Plotting/data/"+fileName+"/speedup.txt");
     ifstream tempo_baseline_naive("../Plotting/data/"+fileName+"/naiveAvgTime.csv");
     double tempo_naive;
     tempo_baseline_naive>>tempo_naive;
-    for(auto x: graph){
-        auto start = chrono::high_resolution_clock::now();
-        base.add_edge(x.first,x.second);
-        if(i++%s_rate == 0){
-            base.compute_result(false);
+    for(int i=0; i<5; i++){
+        for(auto x: graph){
+            auto start = chrono::high_resolution_clock::now();
+            base.add_edge(x.first,x.second);
+            if(i++%s_rate == 0){
+                base.compute_result(false);
+            }
+            auto end = chrono::high_resolution_clock::now();
+            base.reset_computation();
+            tot_time+=chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         }
-        auto end = chrono::high_resolution_clock::now();
-        base.reset_computation();
-        tot_time+=chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     }
-    cout<<((double)tot_time/graph.size())/tempo_naive;
+    tot_time = tot_time/5;
+    tempoNBSim<<tot_time/graph.size();
     speed_up<<((double)tot_time/graph.size())/tempo_naive;
     speed_up.close();
     tempo_baseline_naive.close();
+    tempoNBSim.close();
 }
 
 void effettoK(string fileName,int n, int m,int eta_default,int phi_default,int delta_default,double gamma,double b){
@@ -232,7 +238,7 @@ void effettoK(string fileName,int n, int m,int eta_default,int phi_default,int d
     for(auto k: k_list){
         double tempo_medio_totale=0;
         for(int j=0; j<5; j++){
-            auto credAlgo =  creditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
+            auto credAlgo =  CreditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
             auto start = chrono::high_resolution_clock::now();
             for(auto x: graph){   
                 credAlgo.add_edge(x.first,x.second);
@@ -265,7 +271,7 @@ void calcolaSpeedUpMedio(string fileName,int n, int m,int eta_default,int phi_de
     double tempo_naive;
     tempo_baseline_naive>>tempo_naive;
     for(int j=0; j<5; j++){
-        auto credAlgo =  creditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
+        auto credAlgo =  CreditsAlgo(n,m,eta_default,phi_default,delta_default,gamma,b,k);
         auto start = chrono::high_resolution_clock::now();
         for(auto x: graph){   
             credAlgo.add_edge(x.first,x.second);
