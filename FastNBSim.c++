@@ -55,6 +55,7 @@ public:
     double getQuasiCliqueDensity();
 };
 
+// Implementazioni inline per evitare problemi di linking
 
 FastNBSim::FastNBSim(int num_nodes, double threshold_ts, double threshold_b, int k_param) {
     n = num_nodes;
