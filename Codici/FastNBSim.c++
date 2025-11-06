@@ -53,10 +53,10 @@ public:
     void reset_computation();
     int getQuasiCliqueSize();
     double getQuasiCliqueDensity();
+    vector<int> QuasiCliqueSizes();
 };
 
 // Implementazioni inline per evitare problemi di linking
-
 FastNBSim::FastNBSim(int num_nodes, double threshold_ts, double threshold_b, int k_param) {
     n = num_nodes;
     m = 0;
@@ -65,6 +65,16 @@ FastNBSim::FastNBSim(int num_nodes, double threshold_ts, double threshold_b, int
     k = k_param;
     use_signature = (k > 0);
     initial_variable();
+}
+
+vector<int> FastNBSim::QuasiCliqueSizes(){
+    vector<int> Qs_Size;
+    Qs_Size.resize(n);
+    for(int i=0; i<n; i++){
+        Qs_Size[i] = sift_num(i);
+    }
+    return Qs_Size;
+
 }
 
 void FastNBSim::initial_variable() {
@@ -176,7 +186,7 @@ int FastNBSim::sift_num(int node) {
     }
     double tmp = (double)res / (double)(degree[node]+1);
     if (tmp < b) return 0;
-    return res + 1;
+    return res+1;
 }
 
 void FastNBSim::get_res(bool density) {
