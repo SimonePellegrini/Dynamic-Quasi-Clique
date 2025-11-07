@@ -205,6 +205,7 @@ void FastNBSim::get_res(bool density) {
                 if (ct_score(cur_sol_vertex, v) >= ts) cur_sol.push_back(v);
             }
         }
+        
     if(density){    
         for (int i : cur_sol) {
             for (int i2 : neighbor[i]) {

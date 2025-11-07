@@ -120,18 +120,20 @@ void getSoluzioneDynamicNBSim(string fileName){
 //l'algoritmo dei cinesi "in batch" e l'algoritmo dinamico naive
 
 void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_rate,int k){
-    auto base =  FastNBSim(num_nodes,0.6,0.9,k);
+    
     int i=0;
     double tot_time=0;
-    int n_iter = 5;
+    int n_iter = 10;
     ofstream speed_up("../Esperimenti/"+fileName+"/speedup.txt");
-    ofstream tempoNBSim("../Esperimenti/"+fileName+"/speedup.txt");
+    ofstream tempoNBSim("../Esperimenti/"+fileName+"/tempoNBSim.txt");
     ifstream tempo_baseline_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
     double tempo_naive;
     tempo_baseline_naive>>tempo_naive;
     for(int i=0; i<n_iter; i++){
+        auto base =  FastNBSim(num_nodes,0.9,0.6,k);
         for(auto x: graph){
             auto start = chrono::high_resolution_clock::now();
+            
             base.add_edge(x.first,x.second);
             if(i++%s_rate == 0){
                 base.compute_result(false);
@@ -350,31 +352,31 @@ int main(int argc, const char * argv[]){
     /* 
      * Esegue la grid search per trovare i migliori parametri
      */
-    gridSearch(fileName);
+    //gridSearch(fileName);
 
     /* 
      * Confronta i tempi di inserimento medi ottenuti utilizzando 
      * l'algoritmo dei cinesi "in batch" e l'algoritmo dinamico naive
      */
-    confrontoAlgo1Baseline(fileName, n, m, m * 0.1, k);
+    confrontoAlgo1Baseline(fileName, n, m, 10, 8);
 
     /* 
      * Calcola le soluzioni (dimensioni e densità) ottenute 
      * utilizzando l'algoritmo dei cinesi in "batch"
      */
-    calcolaSoluzioniFastNBSIM(fileName, n, m, k);
+    //calcolaSoluzioniFastNBSIM(fileName, n, m, 0);
 
     /* 
      * Calcola le dimensioni delle quasi-clique estratte da ogni nodo del grafo 
      * utilizzando l'algoritmo dei cinesi sul grafo finale
      */
-    getQsSize(fileName, gamma, b);
+    //getQsSize(fileName, gamma, b);
 
     /* 
      * Calcola il numero di crediti associati a ogni nodo alla fine 
      * dell'inserimento di ogni arco
      */
-    credsAlgoSolutions(fileName, n, m, phi_default, alpha_default, gamma, b, k);
+    //credsAlgoSolutions(fileName, n, m, phi_default, alpha_default, gamma, b, k);
 
     /* 
      * Calcola lo speed up medio nei tempi di inserimento 
