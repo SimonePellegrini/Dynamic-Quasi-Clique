@@ -121,34 +121,47 @@ void getSoluzioneDynamicNBSim(string fileName){
 
 void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_rate,int k){
     
-    int i=0;
+    auto base =  FastNBSim(num_nodes,0.9,0.6,k);
     double tot_time=0;
     int n_iter = 10;
+    int j = 0;
+    double tempo_naive;
+
     ofstream speed_up("../Esperimenti/"+fileName+"/speedup.txt");
     ofstream tempoNBSim("../Esperimenti/"+fileName+"/tempoNBSim.txt");
     ifstream tempo_baseline_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
-    double tempo_naive;
+
     tempo_baseline_naive>>tempo_naive;
+
     for(int i=0; i<n_iter; i++){
-        auto base =  FastNBSim(num_nodes,0.9,0.6,k);
+        j = 0;
+        //cambia la permutazione del grafo
+        read_graph("../Datasets/"+fileName+".txt");
         for(auto x: graph){
             auto start = chrono::high_resolution_clock::now();
-            
+            j++;
+            //aggiungi l'arco al grafo
             base.add_edge(x.first,x.second);
-            if(i++%s_rate == 0){
+            if(j%s_rate == 0){
+                //usa l'algoritmo statico per trovare una buona quasi-clique
                 base.compute_result(false);
             }
             auto end = chrono::high_resolution_clock::now();
+            //resetta le variabili di FastNBSim (min-hash,ecc...)
             base.reset_computation();
+            //somma il tempo di esecuzione dell'operazione
             tot_time+=chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         }
     }
+
+    //calcola gli speedup e inserisci le informazioni nei file
     tot_time = tot_time/n_iter;
     tempoNBSim<<tot_time/graph.size();
     speed_up<<((double)tot_time/graph.size())/tempo_naive;
     speed_up.close();
     tempo_baseline_naive.close();
     tempoNBSim.close();
+    
 }
 
 //Calcola le soluzioni (dimensioni dell quasi clique e densità) ottenute 
@@ -158,6 +171,7 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
     
     unordered_map<int,vector<double>> densità;
     unordered_map<int,vector<int>> dimensione;
+    auto base =  FastNBSim(n,0.9,0.6,k);
     ofstream confronto_dimensioni_apx("../Esperimenti/"+fileName+"/confrontoDimensioniApx.csv");
     ofstream confronto_densità_apx("../Esperimenti/"+fileName+"/confrontoDensitàApx.csv");
     confronto_dimensioni_apx<<"numero di archi,dimensione"<<endl;
@@ -166,7 +180,6 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
     int n_iter = 5;
     for(int i=0; i<n_iter; i++){
         int j = 0;
-        auto base =  FastNBSim(n,0.9,0.6,k);
         for(auto x: graph){
             base.add_edge(x.first,x.second);
             if(++j%s_rate == 0 || j==m-1){
@@ -304,28 +317,40 @@ void credsAlgoSolutions(string fileName, int n, int m,float phi_default,float al
 
 //calcola lo speed up medio nei tempi di inserimento rispetto all'algoritmo dinamico Naive
 void calcolaSpeedUpMedio(string fileName,int n, int m, float phi_default,float alpha_default,double gamma,double b, int k){
-    
+
     int i=0;
+    int n_iter = 10;
     double tempo_medio_totale=0;
+    double tempo_naive;
+
     ofstream speed_up("../Esperimenti/"+fileName+"/Credits_speedup.txt");
     ofstream creditsAvgTime("../Esperimenti/"+fileName+"/CreditsAvgTime.txt");
     ifstream tempo_baseline_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
-    double tempo_naive;
+
+    
     tempo_baseline_naive>>tempo_naive;
-    for(int j=0; j<5; j++){
+
+    for(int j=0; j<n_iter; j++){
+        //aggiorna la permutazione del grafo
         read_graph("../Datasets/"+fileName+".txt");
         auto credAlgo =  CredAlgoImproved(n,m,phi_default,alpha_default,gamma,b,k);
         auto start = chrono::high_resolution_clock::now();
+
         for(auto x: graph){   
             credAlgo.add_edge(x.first,x.second);
             credAlgo.return_dim();
         }
+
         auto end = chrono::high_resolution_clock::now();
         tempo_medio_totale+=((double)chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/graph.size());
+   
     }
-    double tempo_medio = tempo_medio_totale/5;
+
+    //calcola speed-up e tempi
+    double tempo_medio = tempo_medio_totale/n_iter;
     creditsAvgTime<<tempo_medio;
     speed_up<<(double)tempo_naive/tempo_medio;
+
     tempo_baseline_naive.close();
     creditsAvgTime.close();
     speed_up.close();
@@ -358,7 +383,7 @@ int main(int argc, const char * argv[]){
      * Confronta i tempi di inserimento medi ottenuti utilizzando 
      * l'algoritmo dei cinesi "in batch" e l'algoritmo dinamico naive
      */
-    confrontoAlgo1Baseline(fileName, n, m, 10, 8);
+    confrontoAlgo1Baseline(fileName, n, m, 10,k);
 
     /* 
      * Calcola le soluzioni (dimensioni e densità) ottenute 
