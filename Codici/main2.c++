@@ -79,12 +79,12 @@ void gridSearch(string fileName){
                         i++;
                     }
                     auto end = chrono::high_resolution_clock::now();
-                    auto duration = chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    auto duration = std::chrono::duration<double, std::milli>(end - start);
                     media_tempi+=(double)tempo_naive/((double)duration.count()/graph.size());   
                     media_dimensioni+=(double)count/graph.size();
                 }
                 confronto_tempi<<(double)media_tempi/n_iter<<endl;  
-                confronto_dimensioni<<(double)media_dimensioni/100<<endl;
+                confronto_dimensioni<<(double)media_dimensioni/n_iter<<endl;
             }
         }
     confronto_tempi.close();
@@ -98,8 +98,13 @@ void gridSearch(string fileName){
 
 //calcola le dimensioni delle quasi clique estratte dall'algoritmo dinamico Naive e i tempi di inserimento medi
 void getSoluzioneDynamicNBSim(string fileName){
+
+    //file contenente le dimensioni delle quasi-clique estratte
     std::ofstream solution("../Esperimenti/"+fileName+"/naiveSolution.csv");
+    //file contenente il tempo medio di inserimento
     std::ofstream tempi_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
+    
+    //effettua tutti gli inserimenti e estrai le clique ad ogni inserimento
     auto n_a = DynamicNBSim(0.9,0.6,n,m);
     int i = 0;
     solution<<"numero di archi,size quasi-clique-naive"<<endl;
@@ -110,7 +115,9 @@ void getSoluzioneDynamicNBSim(string fileName){
         i++;
     }
     auto end = chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    auto duration = std::chrono::duration<double, std::milli>(end - start);
+    
+    //calcola speed up
     tempi_naive<<(double)duration.count()/graph.size();
     tempi_naive.close();
     solution.close();
@@ -121,9 +128,8 @@ void getSoluzioneDynamicNBSim(string fileName){
 
 void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_rate,int k){
     
-    auto base =  FastNBSim(num_nodes,0.9,0.6,k);
+    int n_iter = 1;
     double tot_time=0;
-    int n_iter = 10;
     int j = 0;
     double tempo_naive;
 
@@ -135,6 +141,8 @@ void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_r
 
     for(int i=0; i<n_iter; i++){
         j = 0;
+
+        auto base =  FastNBSim(num_nodes,0.9,0.6,k);
         //cambia la permutazione del grafo
         read_graph("../Datasets/"+fileName+".txt");
         for(auto x: graph){
@@ -150,7 +158,7 @@ void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_r
             //resetta le variabili di FastNBSim (min-hash,ecc...)
             base.reset_computation();
             //somma il tempo di esecuzione dell'operazione
-            tot_time+=chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            tot_time+=std::chrono::duration<double, std::milli>(end - start).count();
         }
     }
 
@@ -316,14 +324,13 @@ void credsAlgoSolutions(string fileName, int n, int m,float phi_default,float al
 }
 
 //calcola lo speed up medio nei tempi di inserimento rispetto all'algoritmo dinamico Naive
-void calcolaSpeedUpMedio(string fileName,int n, int m, float phi_default,float alpha_default,double gamma,double b, int k){
-
-    int i=0;
-    int n_iter = 10;
+void calcolaSpeedUpMedio(string fileName,int n, int m, float phi_default,float alpha_default,double gamma,double b, int k, int s_rate){
+ 
+    int n_iter = 1;
     double tempo_medio_totale=0;
     double tempo_naive;
 
-    ofstream speed_up("../Esperimenti/"+fileName+"/Credits_speedup.txt");
+    ofstream speed_up("../Esperimenti/"+fileName+"/Credits_speedup_"+to_string(k)+"_"+to_string(s_rate)+".txt");
     ofstream creditsAvgTime("../Esperimenti/"+fileName+"/CreditsAvgTime.txt");
     ifstream tempo_baseline_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
 
@@ -342,14 +349,16 @@ void calcolaSpeedUpMedio(string fileName,int n, int m, float phi_default,float a
         }
 
         auto end = chrono::high_resolution_clock::now();
-        tempo_medio_totale+=((double)chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/graph.size());
-   
+        tempo_medio_totale+=(std::chrono::duration<double, std::milli>(end - start).count());
     }
-
+ 
     //calcola speed-up e tempi
     double tempo_medio = tempo_medio_totale/n_iter;
+    tempo_medio = tempo_medio/graph.size();
     creditsAvgTime<<tempo_medio;
     speed_up<<(double)tempo_naive/tempo_medio;
+
+    cout<<tempo_naive/tempo_medio<<endl;
 
     tempo_baseline_naive.close();
     creditsAvgTime.close();
@@ -368,6 +377,7 @@ int main(int argc, const char * argv[]){
     /* Inizializza il dataset da leggere */
     read_graph("../Datasets/"+fileName+".txt");
 
+    
     /* 
      * Calcola le dimensioni delle quasi clique estratte 
      * dall'algoritmo dinamico Naive e i tempi di inserimento medi
@@ -383,7 +393,15 @@ int main(int argc, const char * argv[]){
      * Confronta i tempi di inserimento medi ottenuti utilizzando 
      * l'algoritmo dei cinesi "in batch" e l'algoritmo dinamico naive
      */
-    confrontoAlgo1Baseline(fileName, n, m, 10,k);
+    //confrontoAlgo1Baseline(fileName, n, m, 10,k);
+
+    for(auto k_val : {8,16,32,64,128,256,512}){
+        for(auto s_rate_val : {10,50,100,200}){
+            cout<<"k="<<k_val<<" "<<"s_rate"<<s_rate_val<<endl;
+            confrontoAlgo1Baseline(fileName,n,m,s_rate_val,k_val);
+            calcolaSpeedUpMedio(fileName, n, m,phi_default,alpha_default,gamma,b,k_val,s_rate_val);
+        }
+    }
 
     /* 
      * Calcola le soluzioni (dimensioni e densità) ottenute 
@@ -407,7 +425,7 @@ int main(int argc, const char * argv[]){
      * Calcola lo speed up medio nei tempi di inserimento 
      * rispetto all'algoritmo dinamico Naive
      */
-    calcolaSpeedUpMedio(fileName, n, m, phi_default, alpha_default, gamma, b, k);
+    calcolaSpeedUpMedio(fileName, n, m, phi_default, alpha_default, gamma, b, k,2);
 
     cout << "Tutti gli esperimenti completati con successo!" << endl;
     return 0;

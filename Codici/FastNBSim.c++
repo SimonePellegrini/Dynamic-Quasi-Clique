@@ -197,14 +197,14 @@ void FastNBSim::get_res(bool density) {
     cur_sol_edges = 0;
     int j = 0;
    
-        for (int v : neighbor[cur_sol_vertex]) {
-            if (use_signature) {
-                if (ct_score_minhash(cur_sol_vertex, v) >= ts) cur_sol.push_back(v);
-            }
-            else {
-                if (ct_score(cur_sol_vertex, v) >= ts) cur_sol.push_back(v);
-            }
+    for (int v : neighbor[cur_sol_vertex]) {
+        if (use_signature) {
+            if (ct_score_minhash(cur_sol_vertex, v) >= ts) cur_sol.push_back(v);
         }
+        else {
+            if (ct_score(cur_sol_vertex, v) >= ts) cur_sol.push_back(v);
+        }
+    }
         
     if(density){    
         for (int i : cur_sol) {
