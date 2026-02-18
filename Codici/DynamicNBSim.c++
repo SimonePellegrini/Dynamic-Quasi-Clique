@@ -25,12 +25,14 @@ class DynamicNBSim
     public:
         DynamicNBSim(double gamma, double b,int n,int m);
         set<int> getBestClique();
-        void Insert(int u, int v);
+        void add_edge(int u, int v);
         double ct_score(int v1, int v2);
-        int getBestCliqueSize();
+        int return_dim();
+        void remove_edge(int u, int v);
+        double return_density();
 };
 
-//funzione per calcolare il containment score
+//compute the containment score
 double DynamicNBSim::ct_score(int v1, int v2) {
     int res = 0;
     unordered_set<int> st;
@@ -43,17 +45,35 @@ double DynamicNBSim::ct_score(int v1, int v2) {
     return (double)res / (double)NeighSize[v1];
 }
 
-int DynamicNBSim::getBestCliqueSize(){
+//return the density of the best clique found 
+double DynamicNBSim::return_density(){
+    int best_clique = pq.rbegin()->second;
+    set<int> cur_sol = quasiClique[best_clique];
+    if(cur_sol.size()==0){
+        return 0;
+    }
+    int cur_sol_edges = 0;
+    for (int i : cur_sol) {
+        for (int i2 : graph[i]) {
+            if(find(cur_sol.begin(), cur_sol.end(), i2) != cur_sol.end()) cur_sol_edges++;
+        }
+    }
+    return double(cur_sol_edges) / double(cur_sol.size()* (cur_sol.size()-1));   
+}
+
+//return the size of the best quasi-clique found
+int DynamicNBSim::return_dim(){
     auto elem = *prev(pq.end());
     return elem.first;
 }
 
+
 DynamicNBSim::DynamicNBSim(double gamma,double b, int n, int m){
     /*
     input:
-    gamma,b: parametri cinesi-like
-    n: il numero di nodi nel grafo
-    m: il numero di archi nel grafo
+    gamma,b: same parameters as FastNBSim
+    n: number of nodes in the graph
+    m: number of edges in the graph
     */
 
     this->gamma = gamma;
@@ -76,7 +96,95 @@ DynamicNBSim::DynamicNBSim(double gamma,double b, int n, int m){
     }
 }
 
-void DynamicNBSim::Insert(int u,int v){
+//remove an edge from the graph and update dynamically the solution mantained
+void DynamicNBSim::remove_edge(int u,int v){
+    if(graph[u].count(v) && graph[v].count(u)){
+    int arr[2] = {u,v};
+    graph[u].erase(v);
+    graph[v].erase(u);
+    for(int option: {0,1}){
+    auto b_x = option^1;
+    int x = arr[option];
+    int y = arr[b_x];
+    for(int w: graph[x])
+    { 
+        if(graph[y].count(w)){
+            //w belongs to the intersection of N(u) and N(v)
+
+            //update t(x,w)
+            containmentScore[x][w] = (containmentScore[x][w]*NeighSize[x]-1)/(NeighSize[x]-1);
+
+            //update the quasi-clique associated to x, if necessary
+            if(containmentScore[x][w]<gamma && quasiClique[x].count(w)){ 
+                pq.erase({quasiClique[x].size(), x});
+                quasiClique[x].erase(w);
+                quasiCliqueSize[x]--;
+                double new_ratio = (double)(quasiClique[x].size() - 1) / (NeighSize[x]-1);
+                if(new_ratio >= b) {
+                    pq.insert({quasiClique[x].size(), x});
+                }
+            }
+
+            //update t(w,x) 
+            containmentScore[w][x] = (containmentScore[w][x]*NeighSize[w]-1)/NeighSize[w];
+
+            //update the quasi-clique associated to w, if necessary
+            if(containmentScore[w][x]<gamma && quasiClique[w].count(x)){
+                pq.erase({quasiClique[w].size(), w});
+                quasiClique[w].erase(x);
+                quasiCliqueSize[w]--;
+                double new_ratio = (double)(quasiClique[w].size() - 1) / NeighSize[w];
+                if(new_ratio >= b) {
+                    pq.insert({quasiClique[w].size(), w});
+                }
+            }
+        }
+        else{
+            //w doesn't belong to the interesction between N(u) and N(v)
+
+            //update t(x,w)
+            containmentScore[x][w] = (containmentScore[x][w]*NeighSize[x])/(NeighSize[x]-1);
+
+            //update the quasi-clique associated to x, if necessary
+            if(containmentScore[x][w]>=gamma && !(quasiClique[x].count(w))){   
+                pq.erase({quasiClique[x].size(), x});
+                quasiClique[x].insert(w);
+                quasiCliqueSize[x]++;
+                double new_ratio = (double)(quasiClique[x].size() - 1) / (NeighSize[x]-1);
+                if(new_ratio >= b) {
+                    pq.insert({quasiClique[x].size(), x});
+                } 
+            }
+        }   
+    } 
+    }
+    NeighSize[u]--;
+    NeighSize[v]--; 
+    containmentScore[u][v] = 0;
+    containmentScore[v][u] = 0;
+    
+    //update the containment scores and the quasi-cliques associated to u and b
+    pq.erase({quasiCliqueSize[v], v});
+    quasiClique[v].erase(u);
+    quasiCliqueSize[v] = quasiClique[v].size();
+    double ratiov = (double)(quasiClique[v].size() - 1) / NeighSize[v];
+    if(ratiov >= b) {
+        pq.insert({quasiClique[v].size(), v});    
+    }
+    
+    pq.erase({quasiCliqueSize[u], u});
+    quasiClique[u].erase(v);
+    quasiCliqueSize[u] = quasiClique[u].size();
+    double ratiou = (double)(quasiClique[u].size() - 1) / NeighSize[u];
+    if(ratiou >= b) {
+        pq.insert({quasiClique[u].size(), u});    
+    } 
+    }
+}
+
+//add an edge to the graph and update dynamically the solution 
+void DynamicNBSim::add_edge(int u,int v){
+    if(!(graph[u].count(v))&&!(graph[v].count(u))){
     int arr[2] = {u,v};
     for(int option: {0,1}){
     auto b_x = option^1;
@@ -85,19 +193,27 @@ void DynamicNBSim::Insert(int u,int v){
     for(int w: graph[x])
     {
         if(graph[y].count(w)){
-            //caso in cui w appartiene all'intersezione tra N(u) e N(v)
+            //w belongs to the intersection between N(u) and N(v)
 
-            //ricalcolo t(x,w)
+            //update t(x,w)
             containmentScore[x][w] = (containmentScore[x][w]*NeighSize[x]+1)/(NeighSize[x]+1);
-            //se il cont. score è maggiore di gamma e w non sta nella quasiClique di x, aggiungilo
+
+            //update the quasi-clique associated to x, if necessary
             if(containmentScore[x][w]>=gamma && !(quasiClique[x].count(w))){ 
+                pq.erase({quasiClique[x].size(), x});
                 quasiClique[x].insert(w);
+                quasiCliqueSize[x]++;
+                double new_ratio = (double)(quasiClique[x].size() - 1) / (NeighSize[x]+1);
+                if(new_ratio >= b) {
+                    pq.insert({quasiClique[x].size(), x});
+                }
             }
 
-            //ricalcolo t(w,x) e aggiorno le quasi-clique di conseguenza
+            //update t(w,x)
             containmentScore[w][x] = (containmentScore[w][x]*NeighSize[w]+1)/NeighSize[w];
+
+            //update the quasi-clique associated to w, if necessary
             if(containmentScore[w][x]>=gamma && !(quasiClique[w].count(x))){
-                //aggiorno la chiave associata al nodo w nella coda con priorità
                 pq.erase({quasiClique[w].size(), w});
                 quasiClique[w].insert(x);
                 quasiCliqueSize[w]++;
@@ -108,10 +224,18 @@ void DynamicNBSim::Insert(int u,int v){
             }
         }
         else{
-            //caso in cui w non appartiene all'intersezione tra N(u) e N(v)
+            //update t(x,w)
             containmentScore[x][w] = (containmentScore[x][w]*NeighSize[x])/(NeighSize[x]+1);
+
+            //update the quasi-clique associated to x, if necessary
             if(containmentScore[x][w]<gamma && quasiClique[x].count(w)){   
+                pq.erase({quasiClique[x].size(), x});
                 quasiClique[x].erase(w);
+                quasiCliqueSize[x]--;
+                double new_ratio = (double)(quasiClique[x].size() - 1) / (NeighSize[x]+1);
+                if(new_ratio >= b) {
+                    pq.insert({quasiClique[x].size(), x});
+                } 
             }
         }   
     } 
@@ -123,7 +247,7 @@ void DynamicNBSim::Insert(int u,int v){
     containmentScore[u][v] = ct_score(u,v);
     containmentScore[v][u] = ct_score(v,u);
     
-    //aggiorno le chiavi associate ai nodi u e v nella coda con priorità
+    //update the quasi-cliques and the containments scores of u and v
     pq.erase({quasiCliqueSize[v], v});
     if(containmentScore[v][u]>=gamma){ 
         quasiClique[v].insert(u);
@@ -143,6 +267,7 @@ void DynamicNBSim::Insert(int u,int v){
     if(ratiou >= b) {
         pq.insert({quasiClique[u].size(), u});    
     } 
+    }
 }
 
 #endif

@@ -24,7 +24,7 @@ private:
     double cur_sol_quasi;
     double f;
     double b;
-    vector<vector<int>> neighbor;
+    vector<set<int>> neighbor;
     vector<int> degree;
     vector<int> kcore_size;
     vector<pair<int,int>> sorted_vertex;
@@ -54,6 +54,7 @@ public:
     int getQuasiCliqueSize();
     double getQuasiCliqueDensity();
     vector<int> QuasiCliqueSizes();
+    void remove_edge(int u, int v);
 };
 
 // Implementazioni inline per evitare problemi di linking
@@ -97,9 +98,20 @@ void FastNBSim::add_edge(int u, int v) {
     if (u >= n || v >= n || u < 0 || v < 0) return;
     degree[u]++;
     degree[v]++;
-    neighbor[u].push_back(v);
-    neighbor[v].push_back(u);
+    neighbor[u].insert(v);
+    neighbor[v].insert(u);
     m++;
+}
+
+void FastNBSim::remove_edge(int u, int v) {
+    if (u >= n || v >= n || u < 0 || v < 0) return;
+    if(neighbor[u].count(v) && neighbor[v].count(u)){
+    degree[u]--;
+    degree[v]--;
+    neighbor[u].erase(v);
+    neighbor[v].erase(u);
+    m--;
+    }
 }
 
 void FastNBSim::get_k_signatures(int node) {
