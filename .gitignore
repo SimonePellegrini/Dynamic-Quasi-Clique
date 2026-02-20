@@ -1,13 +1,10 @@
-# Cartelle dati e risultati
 Datasets/
 Esperimenti/
-Codici/Sequences/  <-- Aggiungi lo slash qui
+Codici/Sequences/  
 
-# File compilati e temporanei
 a.out
 *.o
 *.exe
 *.txt
 
-# Configurazioni IDE
 .vscode/
