@@ -65,6 +65,7 @@ FastNBSim::FastNBSim(int num_nodes, double threshold_ts, double threshold_b, int
     b = threshold_b;
     k = k_param;
     use_signature = (k > 0);
+
     initial_variable();
 }
 

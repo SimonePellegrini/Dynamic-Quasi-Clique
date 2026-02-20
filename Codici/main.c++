@@ -13,7 +13,7 @@
 
 using namespace std;
 using namespace std::chrono;
-int n,m;
+int n,m,number_of_experiments;
 vector<pair<int,int>> graph;
 
 
@@ -40,27 +40,25 @@ struct GraphOp {
     int v;
 };
 
-void gridSearchCreditsAlgorithm(string fileName, float gamma, float b, float prob, string strategy = "standard") {
+vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy, string type){
+    
     string p_str = to_string(prob).substr(0, 3);
     std::ifstream file;
-    
     // open the sequences file
     if(strategy == "standard"){
         file.open("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
     } else {
-        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str + ".txt");
+        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str +"_"+type+ ".txt");
     }
 
     if (!file.is_open()) {
-        cout << "Errore: impossibile aprire il file di sequenza per la Grid Search!" << endl;
-        return; 
+        cout << "Error: the file doesn't exist!" << endl; 
     }
 
-    int number_of_experiments, n, m;
     file >> number_of_experiments >> n >> m;
 
     // save the operations to be executed
-    cout << "Caricamento operazioni in memoria..." << endl;
+    cout << "Loading the dataset..." << endl;
     vector<vector<GraphOp>> all_experiments_ops(number_of_experiments);
     for (int i = 0; i < number_of_experiments; i++) {
         bool end = false;
@@ -77,81 +75,7 @@ void gridSearchCreditsAlgorithm(string fileName, float gamma, float b, float pro
         }
     }
     file.close();
-
-    // grid search parameters
-    vector<int> k_values = {32,64,128,256};
-    vector<float> phi_values = {0.1, 0.3, 0.5, 0.7,0.9};
-    vector<float> alpha_values = {0.2,0.4,0.5,0.6,0.7, 0.8};
-
-    ofstream summary("../Esperimenti/" + fileName + "/grid_search_summary_" + p_str + ".csv");
-    summary << "k,phi,alpha,avg_size_over_time,avg_density_sampled,avg_time_ms\n";
-
-    int total_combinations = k_values.size() * phi_values.size() * alpha_values.size();
-    int current_comb = 0;
-    
-    // Intervall for the computation of the density
-    int interval_10_percent = std::max(1, (int)(m * 0.1));
-
-    cout << "Inizio Grid Search: " << total_combinations << " combinazioni totali." << endl;
-
-    // Grid Search
-    for (int k : k_values) {
-        for (float phi : phi_values) {
-            for (float alpha : alpha_values) {
-                current_comb++;
-                cout << "Test " << current_comb << "/" << total_combinations 
-                     << " [k=" << k << ", phi=" << phi << ", alpha=" << alpha << "]" << endl;
-
-                double total_time_ms = 0;
-                
-                double sum_of_sizes = 0;
-                long long count_sizes = 0;
-                
-                double sum_of_densities = 0;
-                long long count_densities = 0;
-
-                for (int i = 0; i < number_of_experiments; i++) {
-                    auto algo_cred = creditsAlgorithm(n, m, phi, alpha, gamma, b, k);
-                    int operations_done = 0;
-                    
-                    auto start_time = std::chrono::high_resolution_clock::now();
-                    
-                    for (const auto& op : all_experiments_ops[i]) {
-                        operations_done++;
-
-                        if (op.type == 'i') {
-                            algo_cred.add_edge(op.u, op.v);  
-                        } else if (op.type == 'd') {
-                            algo_cred.remove_edge(op.u, op.v); 
-                        }
-
-                        sum_of_sizes += algo_cred.return_dim();
-                        count_sizes++;
-
-                        if (operations_done % interval_10_percent == 0) {
-                            sum_of_densities += algo_cred.return_density();
-                            count_densities++;
-                        }
-                    }
-
-                    auto end_time = std::chrono::high_resolution_clock::now();
-                    std::chrono::duration<double, std::milli> duration = end_time - start_time;
-                    total_time_ms += duration.count();
-                }
-
-                // compute the average values
-                double avg_time = total_time_ms / number_of_experiments;
-                double avg_size_over_time = (count_sizes > 0) ? (sum_of_sizes / count_sizes) : 0;
-                double avg_density_sampled = (count_densities > 0) ? (sum_of_densities / count_densities) : 0;
-
-                summary << k << "," << phi << "," << alpha << "," 
-                        << avg_size_over_time << "," << avg_density_sampled << "," << avg_time << "\n";
-            }
-        }
-    }
-    
-    summary.close();
-    cout << "Grid Search completata! File generato con le medie globali." << endl;
+    return all_experiments_ops;
 }
 
 //computes the speed up obtained using the DynamicFastNBSim algorithm
@@ -189,11 +113,8 @@ void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_r
             base.reset_computation();
             //somma il tempo di esecuzione dell'operazione
             tot_time+=std::chrono::duration<double, std::milli>(end - start).count();
-        }
-        
+        }   
     }
-
-    //calcola gli speedup e inserisci le informazioni nei file
     tot_time = tot_time/n_iter;
     tempoNBSim<<tot_time/graph.size();
     speed_up<<((double)tot_time/graph.size())/tempo_naive;
@@ -289,40 +210,27 @@ void getQsSize(string fileName,float gamma, float b){
     qsSize.close();
 }
 
-
+//helps to 
 template <typename T>
 void saveToCSV(const std::string& filename, const std::vector<std::vector<T>>& data) {
     std::ofstream outFile(filename);
 
     if (!outFile.is_open() || data.empty()) return;
-
-    // 1. Trova l'esperimento più lungo (per sapere quante righe scrivere nel file)
     size_t max_time_steps = 0;
     for (const auto& exp : data) {
         if (exp.size() > max_time_steps) max_time_steps = exp.size();
     }
-
-    // 2. Ciclo ESTERNO: Il Tempo (Le righe del tuo file Excel)
-    for (size_t t = 0; t < max_time_steps; ++t) {
-        
-        // 3. Ciclo INTERNO: Gli Esperimenti (Le colonne del tuo file Excel)
+    for (size_t t = 0; t < max_time_steps; ++t) {   
         for (size_t exp = 0; exp < data.size(); ++exp) {
-            
-            // Controlla se l'esperimento 'exp' ha ancora dati al tempo 't'
             if (t < data[exp].size()) {
                 outFile << data[exp][t];
             }
-            // Altrimenti lascia vuoto (o metti 0 se preferisci)
-            
-            // Metti la virgola se non è l'ultima colonna
             if (exp < data.size() - 1) {
                 outFile << ",";
             }
         }
-        // Fine della riga temporale, andiamo a capo
         outFile << "\n";
     }
-
     outFile.close();
 }
 
@@ -370,83 +278,48 @@ void countCreditsAndGammeDegree(string fileName, float phi, float alpha, float g
     file.close();
 }
 
-void experimentDynamicOnly(string fileName, float gamma, float b, float prob, float perc = 0,string strategy="standard") {
+void experimentDynamicOnly(string fileName, float gamma, float b, float prob, float perc = 0.1,string strategy="standard",string type="erdos") {
     string p_str = to_string(prob).substr(0, 3);
-    std::ifstream file;
-    if(strategy=="standard"){
-        file.open("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
-    }
-    else{
-        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str + ".txt");
-    }
-    
-    if (!file.is_open()) {
-        cout<<"error!"<<endl;
-        return; 
-    }
 
-    int number_of_experiments, n, m;
-    file >> number_of_experiments >> n >> m;
+    //load the dataset
+    vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
 
     vector<vector<int>> dynamicSolution;
     vector<vector<float>> dynamicDensity;
 
     for (int i = 0; i < number_of_experiments; i++) {
         auto algo_dyn = DynamicNBSim(gamma, b, n, m);
+        int number_of_edges=0;
         dynamicSolution.push_back({});
         dynamicDensity.push_back({});
 
-        bool end = false;
-        char type_of_op;
-        int u, v, number_of_edges = 0;
-
-        while (!end) {
-            file >> type_of_op>>u>>v;
-            if (type_of_op == 'i') {
-                number_of_edges++;
-                algo_dyn.add_edge(u, v); 
-                dynamicSolution.back().push_back(algo_dyn.return_dim());
-                if(number_of_edges%(int)(m*perc)==0){
-                    dynamicDensity.back().push_back(algo_dyn.return_density());
-                }
-            } 
-            else if (type_of_op == 'd') {
-                algo_dyn.remove_edge(u, v);
-                if(strategy=="mixed"){
-                    dynamicSolution.back().push_back(algo_dyn.return_dim());
-                    if(number_of_edges%(int)(m*perc)==0){
-                        dynamicDensity.back().push_back(algo_dyn.return_density());
-                    } 
-                }
-            } 
-            else {
-                end = true;
+         for (const auto& op : all_experiments_ops[i]) {    
+            if (op.type == 'i') {
+                algo_dyn.add_edge(op.u, op.v);  
+            } else if (op.type == 'd') {
+                algo_dyn.remove_edge(op.u, op.v); 
+            }
+            number_of_edges++;
+            dynamicSolution.back().push_back(algo_dyn.return_dim());
+            if(number_of_edges%(int)(m*perc)==0){
+                dynamicDensity.back().push_back(algo_dyn.return_density());
             }
         }
     }
-    saveToCSV("../Esperimenti/"+fileName+"/density_credits_"+p_str+".csv",dynamicDensity);
-    saveToCSV("../Esperimenti/" + fileName + "/results_dynamic_" + p_str + ".csv", dynamicSolution);
-    file.close();
-}
-
-void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,float perc = 0.1,string strategy="standard") {
-    string p_str = to_string(prob).substr(0, 3);
-    std::ifstream file;
-    if(strategy=="standard"){
-        file.open("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
+      if(strategy == "standard"){
+        saveToCSV("../Esperimenti/"+fileName+"/standard/density_dynamic_"+p_str+".csv",dynamicDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/results_dynamic_" + p_str + ".csv", dynamicSolution);
     }
     else{
-        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str + ".txt");
-    }
+        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_dynamic_"+type+"_"+p_str+".csv",dynamicDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_dynamic_"+type+"_"+p_str + ".csv", dynamicSolution);
+    }    
+}
 
-    if (!file.is_open()) {
-        cout<<"error!"<<endl;
-        return; 
-    }
-
-    int number_of_experiments, n, m;
-    file >> number_of_experiments >> n >> m;
-
+void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,float perc = 0.1,string strategy="standard",string type="erdos") {
+    string p_str = to_string(prob).substr(0, 3);
+    //load the dataset
+    vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     vector<vector<int>> creditsSolution;
     vector<vector<float>> creditsDensity;
 
@@ -456,83 +329,59 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
         creditsSolution.push_back({});
         creditsDensity.push_back({});
         bool end = false;
-        char type_of_op;
-        int u, v, edge_inserted = 0;
+        int number_of_edges = 0;
 
-        while (!end) {
-            file >> type_of_op>>u>>v;
-            edge_inserted++;
-            if (type_of_op == 'i') {
-                algo_cred.add_edge(u, v);  
-                creditsSolution.back().push_back(algo_cred.return_dim());
-                if(edge_inserted%(int)(m*perc)==0){
-                    creditsDensity.back().push_back(algo_cred.return_density());
-                }
-            } 
-            else if (type_of_op == 'd') {
-                algo_cred.remove_edge(u, v); 
-                if(strategy=="mixed"){
-                    creditsSolution.back().push_back(algo_cred.return_dim());
-                    if(edge_inserted%(int)(m*perc)==0){
-                        creditsDensity.back().push_back(algo_cred.return_density());
-                    }
-                }
-            } 
-            else {
-                end = true;
+        for (const auto& op : all_experiments_ops[i]) {    
+            if (op.type == 'i') {
+                algo_cred.add_edge(op.u, op.v);
+            } else if (op.type == 'd') {
+                algo_cred.remove_edge(op.u, op.v); 
             }
+            number_of_edges++;
+            creditsSolution.back().push_back(algo_cred.return_dim());
+            if(number_of_edges%(int)(m*perc)==0){
+                creditsDensity.back().push_back(algo_cred.return_density());
+            }
+        
         }
     }
-    saveToCSV("../Esperimenti/"+fileName+"/density_credits_"+p_str+".csv",creditsDensity);
-    saveToCSV("../Esperimenti/" + fileName + "/results_credits_" + p_str + ".csv", creditsSolution);
-    file.close();
-}
-
-void experimentCreditsPerformance(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,string strategy="standard") {
-    string p_str = to_string(prob).substr(0, 3);
-    std::ifstream file;
-    if(strategy=="standard"){
-        file.open("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
+    if(strategy == "standard"){
+        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str +"_"+to_string(k)+ ".csv", creditsSolution);
     }
     else{
-        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str + ".txt");
-    }
-    if (!file.is_open()) {
-        cout << "Errore: impossibile aprire il file di sequenza!" << endl;
-        return; 
-    }
+        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv", creditsSolution);
+    }    
+}
 
-    int number_of_experiments, n, m;
-    file >> number_of_experiments >> n >> m;
+void experimentCreditsPerformance(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,string strategy="standard",string type="erdos",int q_freq=10) {
+    string p_str = to_string(prob).substr(0, 3);
+     //load the dataset
+    vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
+    
 
     vector<vector<double>> executionTimes;
 
     for (int i = 0; i < number_of_experiments; i++) {
         executionTimes.push_back({}); 
-        bool end = false;
-        char type_of_op;
-        int u, v;
-
-        
-
         auto algo_cred = creditsAlgorithm(n, m, phi, alpha, gamma, b, k);
-        
+        int n_op=0;
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        while (!end) {
-            file >> type_of_op >> u >> v;
-            
-            if (type_of_op == 'i') {
-                algo_cred.add_edge(u, v);  
-            } 
-            else if (type_of_op == 'd') {
-                algo_cred.remove_edge(u, v); 
-            } 
-            else {
-                end = true;
+        for (const auto& op : all_experiments_ops[i]) {    
+            if (op.type == 'i') {
+                algo_cred.add_edge(op.u, op.v);  
+            } else if (op.type == 'd') {
+                algo_cred.remove_edge(op.u, op.v); 
+            }
+            n_op++;
+            if(n_op==q_freq){
+                algo_cred.return_dim();
+                n_op=0;
             }
         }
-
+        
         auto end_time = std::chrono::high_resolution_clock::now();
 
         std::chrono::duration<double, std::milli> duration = end_time - start_time;
@@ -540,63 +389,80 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
         executionTimes.back().push_back(duration.count());
     }
 
-    saveToCSV("../Esperimenti/" + fileName + "/times_credits_" + p_str + ".csv", executionTimes);
-    file.close();
-}
-
-void experimentDynamicPerformance(string fileName, float gamma, float b, float prob,string strategy = "standard") {
-    string p_str = to_string(prob).substr(0, 3);
-    std::ifstream file;
-    if(strategy=="standard"){
-        file.open("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
+    if(strategy == "standard"){
+        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_" +to_string(k) + ".csv", executionTimes);
     }
     else{
-        file.open("./Sequences/MixedSequences/" + fileName + "_" + p_str + ".txt");
-    }
-    if (!file.is_open()) {
-        cout << "Errore: impossibile aprire il file di sequenza!" << endl;
-        return; 
-    }
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha:"+to_string(alpha)+"_phi"+to_string(phi)+"_k:"+to_string(k)+ ".csv",executionTimes);
+    } 
+}
 
-    int number_of_experiments, n, m;
-    file >> number_of_experiments >> n >> m;
+void experimentDynamicPerformance(string fileName, float gamma, float b, float prob,string strategy = "standard",string type="erdos",int q_freq=10) {
+    string p_str = to_string(prob).substr(0, 3);
+    std::ifstream file;
 
+    //load the dataset
+    vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     vector<vector<double>> executionTimes;
 
     for (int i = 0; i < number_of_experiments; i++) {
         executionTimes.push_back({}); 
-        bool end = false;
-        char type_of_op;
-        int u, v;
 
         auto algo_dyn = DynamicNBSim(gamma, b, n, m); 
-        
+        int n_op = 0;
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        while (!end) {
-            file >> type_of_op >> u >> v;
-            
-            if (type_of_op == 'i') {
-                algo_dyn.add_edge(u, v);  
-            } 
-            else if (type_of_op == 'd') {
-                algo_dyn.remove_edge(u, v);
-            } 
-            else {
-                end = true;
+        for (const auto& op : all_experiments_ops[i]) {    
+            if (op.type == 'i') {
+                algo_dyn.add_edge(op.u, op.v);  
+            } else if (op.type == 'd') {
+                algo_dyn.remove_edge(op.u, op.v); 
+            }
+            n_op++;
+            if(n_op==q_freq){
+                algo_dyn.return_dim();
+                n_op=0;
             }
         }
-
+        
         auto end_time = std::chrono::high_resolution_clock::now();
 
         std::chrono::duration<double, std::milli> duration = end_time - start_time;
-
         executionTimes.back().push_back(duration.count());
     }
-
-    saveToCSV("../Esperimenti/" + fileName + "/times_dynamic_" + p_str + ".csv", executionTimes);
-    file.close();
+    if(strategy == "standard"){
+        saveToCSV("../Esperimenti/" + fileName + "/standard/times_dynamic_" + p_str + ".csv", executionTimes);
+    }
+    else{
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_dynamic_"+type+"_" + p_str + ".csv", executionTimes);
+    }
 }
+
+
+void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, float prob, string strategy = "standard", string type = "erdos", int q_freq = 10) {
+   
+    cout << "Running dynamic baseline..." << endl;
+    experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
+    experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
+        
+    vector<int> k_values = {32, 64, 80, 128, 150, 256};
+    vector<double> alpha_values = {0.12};
+    vector<double> phi_values = {0.6};
+
+    for (int k : k_values) {
+        for(double alpha : alpha_values){
+            for(double phi : phi_values){
+                experimentCreditsOnly(fileName, phi, alpha, gamma, b, k, prob, 0.1, strategy, type);
+                experimentCreditsPerformance(fileName, phi, alpha, gamma, b, k, prob, strategy, type, q_freq);
+            }
+        }    
+    }
+    
+    cout << "Grid search completed." << endl;
+}
+
+
+
 
 int main(int argc, const char * argv[]){
     /*prende dalla riga di comando i parametri in input*/
@@ -611,13 +477,13 @@ int main(int argc, const char * argv[]){
     /* Inizializza il dataset da leggere */
     read_graph("../Datasets/"+fileName+".txt");
 
-    /*
-    experimentDynamicOnly(fileName,gamma,b,p,0.1,"mixed");
-    experimentCreditsOnly(fileName,phi,alpha,gamma,b,k,p,0.1,"mixed");
-    experimentCreditsPerformance(fileName,phi,alpha,gamma,b,k,p,"mixed");
-    experimentDynamicPerformance(fileName,gamma,b,p,"mixed");
-    */
-    gridSearchCreditsAlgorithm(fileName, gamma,b,p);
+
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard");
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","power");
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
+    
+    //gridSearchCreditsAlgorithm(fileName, gamma,b,p);
 
     cout << "Tutti gli esperimenti completati con successo!" << endl;
     return 0;

@@ -1,5 +1,11 @@
-Programmi utilizzati per la parte sperimentale della mia tesi triennale "Un algoritmo efficiente per il mantenimento di quasi clique su grafi dinamici".
+Per eseguire gli esperimenti bisogna strutturare la directory in questa maniera:
 
-- FastNBSim un implementazione dei due algoritmi NBSim e FastNBSim che permette di utilizzare questi due algoritmi in modalità batch su una serie di inseriemnti
-- DynamicNBSim e CreditsAlgo implementano i rispettivi algoritmi
-- main contiene invece il codice utilizzato per effettuare gli esperimenti
+Cartella Codici:
+- contiene gli script e il codice sorgente
+- contiene una sotto cartella "Sequences" divisa a sua volta in "MixedSequences" e "StandardSequences"
+
+Cartella Datasets:
+- contiene i file txt dei datasets
+
+Cartella Esperimenti:
+- per ogni dataset contiene una cartella con il suo nome (e.g. per il dataset ego-facebook contiene una cartella con questo nome), ogni cartella del dataset e divisa in due sottocartelle: "mixed" e "standard"

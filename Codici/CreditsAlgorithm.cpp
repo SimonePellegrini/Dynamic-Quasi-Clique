@@ -52,8 +52,7 @@ class creditsAlgorithm{
         vector<int> getGammaDegree();
         vector<int> returnBestClique();
         double ct_score_minhash(int u, int v);
-        void add_edge(int u, int v);
-        int sift_num(int u);
+        void add_edge(int u, int v); 
         void incremental_minhash_update(int u,int v); 
         int return_dim();
         double return_density();
@@ -93,7 +92,7 @@ creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double ga
     hashes = DynamicMinHash::createHashFunctions(k);
     //init the dynamic minhash signatures
     for(int i=0; i<n; i++){ 
-        signature[i] = new DynamicMinHash(k,4, hashes);
+        signature[i] = new DynamicMinHash(k,2, hashes);
         signature[i]->insert(i);
     }
 
@@ -109,7 +108,6 @@ void creditsAlgorithm::remove_edge(int u, int v){
     if(neighborhood[u].count(v) && neighborhood[v].count(u)){
     neighborhood[u].erase(v);
     neighborhood[v].erase(u);
-
     degree[v] = neighborhood[v].size();
     degree[u] = neighborhood[u].size();
     
@@ -128,7 +126,7 @@ void creditsAlgorithm::remove_edge(int u, int v){
             signature[v]->insert(x);
         }
     }
-    
+
     //update the credits distribuited
     if(received_credits[{u,v}]){
         credits[v]--;
@@ -142,6 +140,7 @@ void creditsAlgorithm::remove_edge(int u, int v){
     }
     
     //check wheter it is necessary to update the quasi-clique
+
     if(past_credits[u]+count[u]>=(1+alpha)*past_credits[u] && sol_size[u]>=phi*(pq.rbegin()->first)){
         count[u] = 0;
         past_credits[u] = credits[u];
@@ -162,9 +161,10 @@ void creditsAlgorithm::remove_edge(int u, int v){
 
 //add the edge to the graph and update credits and quasi-cliques, if necessary
 void creditsAlgorithm::add_edge(int u, int v){
-
+    //check wheter the edge (u,v) is already in the graph
     if(!(neighborhood[u].count(v)) && !(neighborhood[v].count(u))){
     
+    //insert the edge in the graph
     neighborhood[v].insert(u);
     neighborhood[u].insert(v);
     degree[v] = neighborhood[v].size();
@@ -188,7 +188,7 @@ void creditsAlgorithm::add_edge(int u, int v){
     }
     
     //check wheter it is necessary to update the quasi-clique
-    if(past_credits[u] + count[u]>(1+alpha)*past_credits[u] && credits[u]>phi*(pq.rbegin()->first)){
+    if(past_credits[u] + count[u]>=(1+alpha)*past_credits[u] && credits[u]>=phi*(pq.rbegin()->first)){
         count[u] = 0;
         past_credits[u] = credits[u];
         pq.erase({sol_size[u],u});
@@ -196,8 +196,7 @@ void creditsAlgorithm::add_edge(int u, int v){
         pq.insert({sol_size[u],u});
     }
 
-
-    if(past_credits[v] + count[v]>(1+alpha)*past_credits[v] && credits[v]>phi*(pq.rbegin()->first)){
+    if(past_credits[v] + count[v]>=(1+alpha)*past_credits[v] && credits[v]>=phi*(pq.rbegin()->first)){
         count[v] = 0;
         past_credits[v] = credits[v];
         pq.erase({sol_size[v],v});
@@ -213,7 +212,7 @@ void creditsAlgorithm::add_edge(int u, int v){
 int creditsAlgorithm::visit_node(int node) {
     int res = 0;
     for (int v : neighborhood[node]) {
-       if (ct_score_minhash(node, v) > gamma) res++;
+       if (ct_score_minhash(node, v) >= gamma) res++;
     }    
     double tmp = (double)res / (double)(degree[node]+1);
     
@@ -229,7 +228,7 @@ vector<int> creditsAlgorithm::obtain_solution(int node){
     vector<int> sol;
     sol.push_back(node);
     for (int v : neighborhood[node]) {
-       if (ct_score_minhash(node, v) > gamma) sol.push_back(v);
+       if (ct_score_minhash(node, v) >= gamma) sol.push_back(v);
     }    
     return sol;
 }
@@ -239,7 +238,8 @@ vector<int> creditsAlgorithm::obtain_solution(int node){
 double creditsAlgorithm::ct_score_minhash(int u, int v){
     int inter = 0;
     double js = DynamicMinHash::similarity(signature[u], signature[v]);
-    
+    double ts = (double)(degree[u] + degree[v] + 2) * js / (js + 1) / (double)(degree[u] + 1);
+
     return (double)(degree[u] + degree[v] + 2) * js / (js + 1) / (double)(degree[u] + 1);
 }
 
@@ -258,24 +258,16 @@ double creditsAlgorithm::ct_scores(int v1, int v2) {
 //return the best clique mantained
 
 int creditsAlgorithm::return_dim(){
-    
-    int d = visit_node(pq.rbegin()->second);
-    sol_size[pq.rbegin()->second] = d;
+    // take the node on the top of the priority que
     int node = pq.rbegin()->second;
-    pq.erase({pq.rbegin()->first,node});
-    pq.insert({d,node});
-    if(d>0){
-        best_clique = node; 
-        return d;
-    }
-       
+    vector<int> solution = obtain_solution(node);
+    best_clique = node;
     
-    return 0;
+    //return its size
+    return solution.size();
 }
 
-
 //return the number of credits associated to each node in the graph
-
 vector<int> creditsAlgorithm::getCredits(){
     return credits;
 }

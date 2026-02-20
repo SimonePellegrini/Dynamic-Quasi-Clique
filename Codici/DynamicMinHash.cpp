@@ -118,7 +118,7 @@ public:
                 else
                 {
                     // Replace the maximum value in the buffer
-                    for (size_t j = 1; j < buffer_max_size; j++)
+                    for (size_t j = 0; j < buffer_max_size; j++)
                     {
                         if (buffers[i][j] == thresholds[i])
                         {
