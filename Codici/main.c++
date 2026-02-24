@@ -9,7 +9,6 @@
 #include "FastNBSim.c++"
 #include "CreditsAlgorithm.cpp"
 #include "math.h"
-#include <format>
 
 using namespace std;
 using namespace std::chrono;
@@ -306,7 +305,7 @@ void experimentDynamicOnly(string fileName, float gamma, float b, float prob, fl
             }
         }
     }
-      if(strategy == "standard"){
+    if(strategy == "standard"){
         saveToCSV("../Esperimenti/"+fileName+"/standard/density_dynamic_"+p_str+".csv",dynamicDensity);
         saveToCSV("../Esperimenti/" + fileName + "/standard/results_dynamic_" + p_str + ".csv", dynamicSolution);
     }
@@ -445,7 +444,7 @@ void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, 
     experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
     experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
         
-    vector<int> k_values = {32, 64, 80, 128, 150, 256};
+    vector<int> k_values = {32, 64};
     vector<double> alpha_values = {0.12};
     vector<double> phi_values = {0.6};
 
@@ -470,16 +469,17 @@ int main(int argc, const char * argv[]){
     float phi = atof(argv[1]);
     float alpha = atof(argv[2]);
     string fileName = argv[4];
-    double gamma = 0.9;
-    double b = 0.6;
+    double gamma = atof(argv[6]);
+    double b = atof(argv[7]);
     int k = atoi(argv[3]);
     double p = atof(argv[5]);
     /* Inizializza il dataset da leggere */
     read_graph("../Datasets/"+fileName+".txt");
 
 
+    
     gridSearchK(fileName,phi,alpha,gamma,b,p,"standard");
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","power");
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
     gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
     gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
     

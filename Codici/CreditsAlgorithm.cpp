@@ -48,6 +48,7 @@ class creditsAlgorithm{
 
     public:
         creditsAlgorithm(int n,int m, float phi,float alpha, double gamma,double beta,int k);
+        ~creditsAlgorithm();
         vector<int> getCredits();
         vector<int> getGammaDegree();
         vector<int> returnBestClique();
@@ -63,6 +64,11 @@ class creditsAlgorithm{
 
 
 
+creditsAlgorithm::~creditsAlgorithm(){
+   for(int i=0; i<n; i++){ 
+        signature[i]->~DynamicMinHash();
+    }
+};
 
 creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double gamma,double beta,int k){
 
@@ -92,7 +98,7 @@ creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double ga
     hashes = DynamicMinHash::createHashFunctions(k);
     //init the dynamic minhash signatures
     for(int i=0; i<n; i++){ 
-        signature[i] = new DynamicMinHash(k,2, hashes);
+        signature[i] = new DynamicMinHash(k,4, hashes);
         signature[i]->insert(i);
     }
 
@@ -238,7 +244,6 @@ vector<int> creditsAlgorithm::obtain_solution(int node){
 double creditsAlgorithm::ct_score_minhash(int u, int v){
     int inter = 0;
     double js = DynamicMinHash::similarity(signature[u], signature[v]);
-    double ts = (double)(degree[u] + degree[v] + 2) * js / (js + 1) / (double)(degree[u] + 1);
 
     return (double)(degree[u] + degree[v] + 2) * js / (js + 1) / (double)(degree[u] + 1);
 }

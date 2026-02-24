@@ -149,14 +149,13 @@ def plot_speedup(dataset_name, p_str, k_values, strategy="standard", seq_type="e
     plt.show()
 
 
-KS = [32, 64, 80, 128, 150, 256]
-DATASET = "ca-hepph"
-PROB = "0.2"
-STRATEGIA = "mixed" # or "standard"
-SEQ = "rich"       # erdos, power, rich
+KS = [32]
+DATASET = "Amazon0601_clean"
+PROB = "0.1"
+STRATEGIA = "standard" # or "standard"
+SEQ = "erdos"       # erdos, power, rich
 ALPHA = 0.12
 PHI = 0.6
-
 
 plot_speedup(DATASET, PROB, KS, strategy=STRATEGIA, seq_type=SEQ, alpha=ALPHA, phi=PHI)
 plot_quasi_clique_results_grid(DATASET, PROB, KS, strategy=STRATEGIA, seq_type=SEQ, alpha=ALPHA, phi=PHI)
