@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <set>
 #include "DynamicMinHash.cpp"
+#include <unordered_map>
 
 
 using namespace std;
@@ -65,8 +66,16 @@ class creditsAlgorithm{
 
 
 creditsAlgorithm::~creditsAlgorithm(){
+
    for(int i=0; i<n; i++){ 
-        signature[i]->~DynamicMinHash();
+        if(signature[i] != nullptr) delete signature[i];
+    }
+
+    if(hashes != nullptr) {
+        for(int i=0; i<k; i++) {
+            delete hashes[i]; 
+        }
+        delete[] hashes;     
     }
 };
 
@@ -98,7 +107,7 @@ creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double ga
     hashes = DynamicMinHash::createHashFunctions(k);
     //init the dynamic minhash signatures
     for(int i=0; i<n; i++){ 
-        signature[i] = new DynamicMinHash(k,4, hashes);
+        signature[i] = new DynamicMinHash(k,1, hashes);
         signature[i]->insert(i);
     }
 

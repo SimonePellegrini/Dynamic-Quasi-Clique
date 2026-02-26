@@ -74,12 +74,10 @@ public:
         for (size_t i = 0; i < k; i++)
         {
             delete[] buffers[i];
-            delete hashes[i];
         }
         delete[] buffers;
         delete[] buffer_sizes;
         delete[] thresholds;
-        delete[] hashes;
         delete[] signature;
     }
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_set>
 #include <set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -55,7 +56,7 @@ double DynamicNBSim::return_density(){
     int cur_sol_edges = 0;
     for (int i : cur_sol) {
         for (int i2 : graph[i]) {
-            if(find(cur_sol.begin(), cur_sol.end(), i2) != cur_sol.end()) cur_sol_edges++;
+            if(cur_sol.count(i2)) cur_sol_edges++;
         }
     }
     return double(cur_sol_edges) / double(cur_sol.size()* (cur_sol.size()-1));   
@@ -63,6 +64,7 @@ double DynamicNBSim::return_density(){
 
 //return the size of the best quasi-clique found
 int DynamicNBSim::return_dim(){
+    if(pq.size()==0) return 0;
     auto elem = *prev(pq.end());
     return elem.first;
 }

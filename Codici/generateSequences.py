@@ -133,15 +133,15 @@ def generate_mixed_sequences(file_name, number_of_sequences=1, prob=0.1, additio
     file_obj.close() 
 
 
-datasets=["ego-facebook","ca-CondMat","ca-HepPh","loc-gowalla","email-enron","web-stanford"]
+datasets=["Amazon0601",]
 probabilities = [0.0,0.1,0.2]
 types = ["erdos","rich","power"]
 
 for prob in probabilities:
     for name in datasets:
         for type in types:
-            generate_mixed_sequences(name,10,prob,0.4,type)
+            generate_mixed_sequences(name,5,prob,0.4,type)
 
 for prob in probabilities:
     for name in datasets:
-            generate_sequences(name,10,prob,0.4)
+            generate_sequences(name,5,prob,0.4)

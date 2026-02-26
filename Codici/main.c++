@@ -9,6 +9,8 @@
 #include "FastNBSim.c++"
 #include "CreditsAlgorithm.cpp"
 #include "math.h"
+#include <unordered_map>
+#include <unordered_map>
 
 using namespace std;
 using namespace std::chrono;
@@ -127,13 +129,13 @@ void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_r
 
 void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
     
-    unordered_map<int,vector<double>> densità;
+    unordered_map<int,vector<double>> densita;
     unordered_map<int,vector<int>> dimensione;
     auto base =  FastNBSim(n,0.9,0.6,k);
     ofstream confronto_dimensioni_apx("../Esperimenti/"+fileName+"/confrontoDimensioniApx.csv");
-    ofstream confronto_densità_apx("../Esperimenti/"+fileName+"/confrontoDensitàApx.csv");
+    ofstream confronto_densita_apx("../Esperimenti/"+fileName+"/confrontodensitaApx.csv");
     confronto_dimensioni_apx<<"numero di archi,dimensione"<<endl;
-    confronto_densità_apx<<"numero di archi,densità"<<endl;
+    confronto_densita_apx<<"numero di archi,densita"<<endl;
     int s_rate = m*0.1;
     int n_iter = 100;
     for(int i=0; i<n_iter; i++){
@@ -143,7 +145,7 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
             if(++j%s_rate == 0 || j==m-1){
                 base.compute_result(true);
                 dimensione[j].push_back(base.getQuasiCliqueSize());
-                densità[j].push_back(base.getQuasiCliqueDensity());
+                densita[j].push_back(base.getQuasiCliqueDensity());
                 base.reset_computation();
             }
             
@@ -151,13 +153,13 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
     }
     
     for(int i = 0; i < m; i+=s_rate) {
-        double tot_densità=0;
+        double tot_densita=0;
         int tot_dimensione=0;
         int c_d = 0;
         int c_dim =0;
-        for(auto x:densità[i]){
+        for(auto x:densita[i]){
             if(x!=0){
-                tot_densità+=x;
+                tot_densita+=x;
                 c_d++;
             }
         }
@@ -168,15 +170,15 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
             }
         }
         confronto_dimensioni_apx<<i<<","<<tot_dimensione/c_dim<<endl;
-        confronto_densità_apx<<i<<","<<tot_densità/c_d<<endl;
+        confronto_densita_apx<<i<<","<<tot_densita/c_d<<endl;
     }
-    double tot_densità=0;
+    double tot_densita=0;
     int tot_dimensione=0;
     int c_d = 0;
     int c_dim =0;
-    for(auto x:densità[m-1]){
+    for(auto x:densita[m-1]){
         if(x!=0){
-            tot_densità+=x;
+            tot_densita+=x;
             c_d++;
         }
     }
@@ -187,9 +189,9 @@ void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
         }
     }
     confronto_dimensioni_apx<<m-1<<","<<tot_dimensione/c_dim<<endl;
-    confronto_densità_apx<<m-1<<","<<tot_densità/c_d<<endl;
+    confronto_densita_apx<<m-1<<","<<tot_densita/c_d<<endl;
     confronto_dimensioni_apx.close();
-    confronto_densità_apx.close();
+    confronto_densita_apx.close();
 }
 
 //computes the dimensions of the quasi-cliques obtained after inserting all the edges in the graph
@@ -282,29 +284,34 @@ void experimentDynamicOnly(string fileName, float gamma, float b, float prob, fl
 
     //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
-
     vector<vector<int>> dynamicSolution;
     vector<vector<float>> dynamicDensity;
-
+    
     for (int i = 0; i < number_of_experiments; i++) {
+        
         auto algo_dyn = DynamicNBSim(gamma, b, n, m);
         int number_of_edges=0;
         dynamicSolution.push_back({});
         dynamicDensity.push_back({});
-
-         for (const auto& op : all_experiments_ops[i]) {    
+        
+         for (const auto& op : all_experiments_ops[i]) {  
+            
             if (op.type == 'i') {
                 algo_dyn.add_edge(op.u, op.v);  
             } else if (op.type == 'd') {
                 algo_dyn.remove_edge(op.u, op.v); 
             }
+            
             number_of_edges++;
+      
             dynamicSolution.back().push_back(algo_dyn.return_dim());
+  
             if(number_of_edges%(int)(m*perc)==0){
                 dynamicDensity.back().push_back(algo_dyn.return_density());
             }
         }
     }
+    
     if(strategy == "standard"){
         saveToCSV("../Esperimenti/"+fileName+"/standard/density_dynamic_"+p_str+".csv",dynamicDensity);
         saveToCSV("../Esperimenti/" + fileName + "/standard/results_dynamic_" + p_str + ".csv", dynamicSolution);
@@ -341,9 +348,9 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
             if(number_of_edges%(int)(m*perc)==0){
                 creditsDensity.back().push_back(algo_cred.return_density());
             }
-        
         }
     }
+      
     if(strategy == "standard"){
         saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_"+to_string(k)+".csv",creditsDensity);
         saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str +"_"+to_string(k)+ ".csv", creditsSolution);
@@ -400,6 +407,7 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
     string p_str = to_string(prob).substr(0, 3);
     std::ifstream file;
 
+    
     //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     vector<vector<double>> executionTimes;
@@ -444,9 +452,9 @@ void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, 
     experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
     experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
         
-    vector<int> k_values = {32, 64};
-    vector<double> alpha_values = {0.12};
-    vector<double> phi_values = {0.6};
+    vector<int> k_values = {32,64,128,256};
+    vector<double> alpha_values = {0.1,0,3,0.5};
+    vector<double> phi_values = {0.6,0.4,0.8};
 
     for (int k : k_values) {
         for(double alpha : alpha_values){
@@ -477,7 +485,7 @@ int main(int argc, const char * argv[]){
     read_graph("../Datasets/"+fileName+".txt");
 
 
-    
+    cout<<fileName<<endl;
     gridSearchK(fileName,phi,alpha,gamma,b,p,"standard");
     gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
     gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
