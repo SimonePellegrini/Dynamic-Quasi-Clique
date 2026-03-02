@@ -186,7 +186,7 @@ void DynamicNBSim::remove_edge(int u,int v){
 
 //add an edge to the graph and update dynamically the solution 
 void DynamicNBSim::add_edge(int u,int v){
-    if(!(graph[u].count(v))&&!(graph[v].count(u))){
+    if(!(graph[u].count(v)) && !(graph[v].count(u))){
     int arr[2] = {u,v};
     for(int option: {0,1}){
     auto b_x = option^1;

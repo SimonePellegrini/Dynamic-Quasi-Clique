@@ -60,6 +60,7 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
 
     // save the operations to be executed
     cout << "Loading the dataset..." << endl;
+    
     vector<vector<GraphOp>> all_experiments_ops(number_of_experiments);
     for (int i = 0; i < number_of_experiments; i++) {
         bool end = false;
@@ -67,7 +68,6 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
             char type_of_op;
             int u, v;
             file >> type_of_op >> u >> v;
-            
             if (type_of_op == 'i' || type_of_op == 'd') {
                 all_experiments_ops[i].push_back({type_of_op, u, v});
             } else {
@@ -76,6 +76,7 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
         }
     }
     file.close();
+    cout<<"file read!"<<endl;
     return all_experiments_ops;
 }
 
@@ -352,11 +353,11 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
     }
       
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str +"_"+to_string(k)+ ".csv", creditsSolution);
+        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv" , creditsSolution);
     }
     else{
-        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+".csv",creditsDensity);
         saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv", creditsSolution);
     }    
 }
@@ -380,12 +381,7 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
                 algo_cred.add_edge(op.u, op.v);  
             } else if (op.type == 'd') {
                 algo_cred.remove_edge(op.u, op.v); 
-            }
-            n_op++;
-            if(n_op==q_freq){
-                algo_cred.return_dim();
-                n_op=0;
-            }
+            } 
         }
         
         auto end_time = std::chrono::high_resolution_clock::now();
@@ -396,10 +392,10 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
     }
 
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_" +to_string(k) + ".csv", executionTimes);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:" +to_string(k) + ".csv", executionTimes);
     }
     else{
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha:"+to_string(alpha)+"_phi"+to_string(phi)+"_k:"+to_string(k)+ ".csv",executionTimes);
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv",executionTimes);
     } 
 }
 
@@ -411,12 +407,11 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
     //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     vector<vector<double>> executionTimes;
-
+    
     for (int i = 0; i < number_of_experiments; i++) {
         executionTimes.push_back({}); 
-
         auto algo_dyn = DynamicNBSim(gamma, b, n, m); 
-        int n_op = 0;
+
         auto start_time = std::chrono::high_resolution_clock::now();
 
         for (const auto& op : all_experiments_ops[i]) {    
@@ -424,11 +419,6 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
                 algo_dyn.add_edge(op.u, op.v);  
             } else if (op.type == 'd') {
                 algo_dyn.remove_edge(op.u, op.v); 
-            }
-            n_op++;
-            if(n_op==q_freq){
-                algo_dyn.return_dim();
-                n_op=0;
             }
         }
         
@@ -446,14 +436,14 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
 }
 
 
-void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, float prob, string strategy = "standard", string type = "erdos", int q_freq = 10) {
-   
-    cout << "Running dynamic baseline..." << endl;
-    experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
-    experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
-        
-    vector<int> k_values = {32,64,128,256};
-    vector<double> alpha_values = {0.1,0,3,0.5};
+void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, float prob, string strategy = "standard", string type = "erdos", int q_freq = 10,bool run_dyn=true) {
+    if(run_dyn){
+        cout << "Running dynamic baseline..." << endl;
+        experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
+        experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
+    }
+    vector<int> k_values = {32,64,128,256,512};
+    vector<double> alpha_values = {0.12,0.3,0.5};
     vector<double> phi_values = {0.6,0.4,0.8};
 
     for (int k : k_values) {
@@ -486,10 +476,14 @@ int main(int argc, const char * argv[]){
 
 
     cout<<fileName<<endl;
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard");
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
+    cout<<"standard"<<endl;
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard","erdos",10,false);
+    cout<<"erdos"<<endl;
+    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
+    cout<<"rich"<<endl;
+    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
+    //cout<<"power"<<endl;
+    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","power");
     
     //gridSearchCreditsAlgorithm(fileName, gamma,b,p);
 

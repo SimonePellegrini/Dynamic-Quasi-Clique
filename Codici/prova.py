@@ -2,160 +2,118 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.colors as mcolors
-import math
 import os
+from itertools import product
 
-def get_file_path(base_path, strategy, p_str, k, seq_type, alpha=None, phi=None, file_type="results"):
-    """
-    Costruisce i path seguendo esattamente la struttura delle cartelle e i nomi file del codice C++.
-    """
+def format_cpp_float(val):
+    """Simula std::to_string(float) del C++ (6 decimali)."""
+    return f"{float(val):.6f}"
+
+def get_file_path(base_path, strategy, p_str, k, seq_type, alpha, phi, file_type="results"):
+    a_str = format_cpp_float(alpha)
+    p_val = format_cpp_float(phi)
+    
     if strategy == "standard":
-        if file_type == "results":
-            filename = f"results_credits_{p_str}_{k}.csv"
-        elif file_type == "density":
-            filename = f"density_credits_{p_str}_{k}.csv"
-        else: # times
-            filename = f"times_credits_{p_str}_{k}.csv"
-        return os.path.join(base_path, filename)
-    else:
-        # Per mixed, il C++ usa std::to_string per alpha e phi (solitamente 6 decimali)
-        # Esempio: results_credits_power_0.2_alpha:0.500000_phi:0.600000_k:128.csv
-        a_str = f"{alpha:.6f}" if alpha is not None else "0.500000"
-        p_val = f"{phi:.6f}" if phi is not None else "0.600000"
-        
-        if file_type == "results":
-            filename = f"results_credits_{seq_type}_{p_str}_alpha:{a_str}_phi:{p_val}_k:{k}.csv"
-        elif file_type == "density":
-            # Nota: il C++ per la densità mixed non sembra includere alpha/phi nel nome file
-            filename = f"density_credits_{seq_type}_{p_str}_{k}.csv"
-        else: # times
-            # Nota: il C++ ha un piccolo refuso nel codice originale (_phi invece di _phi:)
-            filename = f"times_credits_{seq_type}_{p_str}_alpha:{a_str}_phi{p_val}_k:{k}.csv"
+        filename = f"{file_type}_credits_{p_str}_alpha:{a_str}_phi:{p_val}_k:{k}.csv"
+    else: # mixed
+        filename = f"{file_type}_credits_{seq_type}_{p_str}_alpha:{a_str}_phi:{p_val}_k:{k}.csv"
             
-        return os.path.join(base_path, filename)
+    return os.path.join(base_path, filename)
 
-def plot_quasi_clique_results_grid(dataset_name, p_str, k_values, strategy="standard", seq_type="erdos", alpha=0.5, phi=0.6):
-    base_dir = f"../Esperimenti/{dataset_name}/{strategy}/"
+def create_folder_structure(dataset_name):
+    """Crea la gerarchia di cartelle richiesta."""
+    base_plot_path = os.path.join("plots", dataset_name)
+    subfolders = ["standard", "erdos", "power", "rich"]
     
-    # 1. Caricamento Baseline Dynamic
-    if strategy == "standard":
-        file_dyn = f"{base_dir}results_dynamic_{p_str}.csv"
-        file_dyn_dens = f"{base_dir}density_dynamic_{p_str}.csv"
-    else:
-        file_dyn = f"{base_dir}results_dynamic_{seq_type}_{p_str}.csv"
-        file_dyn_dens = f"{base_dir}density_dynamic_{seq_type}_{p_str}.csv"
+    for sub in subfolders:
+        path = os.path.join(base_plot_path, sub)
+        if not os.path.exists(path):
+            os.makedirs(path)
+            print(f"Cartella creata: {path}")
     
-    df_dyn = None
-    df_dyn_dens = None
-    try:
-        df_dyn = pd.read_csv(file_dyn, header=None).mean(axis=1)
-        if os.path.exists(file_dyn_dens):
-            df_dyn_dens = pd.read_csv(file_dyn_dens, header=None).mean(axis=1)
-    except Exception as e:
-        print(f"Warning Baseline: {e}")
+    return base_plot_path
 
-    # 2. Setup Grafico
-    n_cols = 3
-    n_rows = math.ceil(len(k_values) / n_cols)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows), sharey=True, sharex=True, constrained_layout=True)
-    axes_flat = axes.flatten() if len(k_values) > 1 else [axes]
+def generate_all_plots(dataset_name, p_str, k_list, alpha_list, phi_list, strategy="standard", seq_type="erdos"):
+    # Path dei dati C++
+    base_data_dir = f"../Esperimenti/{dataset_name}/{strategy}/"
+    
+    # Path di destinazione dei Plot
+    dataset_plot_root = create_folder_structure(dataset_name)
+    # Se la strategia è 'mixed', usiamo seq_type come cartella, altrimenti 'standard'
+    target_folder = "standard" if strategy == "standard" else seq_type
+    save_dir = os.path.join(dataset_plot_root, target_folder)
+    
+    # Caricamento Baseline
+    suffix = f"{p_str}" if strategy == "standard" else f"{seq_type}_{p_str}"
+    file_dyn = f"{base_data_dir}results_dynamic_{suffix}.csv"
+    file_dyn_dens = f"{base_data_dir}density_dynamic_{suffix}.csv"
+    file_dyn_time = f"{base_data_dir}times_dynamic_{suffix}.csv"
 
-    cmap_base = plt.get_cmap('RdYlGn')
-    norm = mcolors.BoundaryNorm([0.0, 0.5, 0.7, 0.8, 0.9, 1.0], cmap_base.N)
-    sc = None
+    df_dyn = pd.read_csv(file_dyn, header=None).mean(axis=1) if os.path.exists(file_dyn) else None
+    df_dyn_dens = pd.read_csv(file_dyn_dens, header=None).mean(axis=1) if os.path.exists(file_dyn_dens) else None
+    baseline_time = pd.read_csv(file_dyn_time, header=None).mean().mean() if os.path.exists(file_dyn_time) else None
 
-    for idx, k in enumerate(k_values):
-        ax = axes_flat[idx]
+    for alpha, phi, k in product(alpha_list, phi_list, k_list):
+        f_cred = get_file_path(base_data_dir, strategy, p_str, k, seq_type, alpha, phi, "results")
+        f_dens = get_file_path(base_data_dir, strategy, p_str, k, seq_type, alpha, phi, "density")
+        f_time = get_file_path(base_data_dir, strategy, p_str, k, seq_type, alpha, phi, "times")
+
+        if not os.path.exists(f_cred):
+            continue
+
+        fig, ax = plt.subplots(figsize=(10, 6))
         
-        # Plot Baseline (Nera con triangoli rivolti in basso)
+        # Plot Baseline
         if df_dyn is not None:
-            ax.plot(df_dyn, label='Fully-dynamic', color='black', linestyle='--', linewidth=1, alpha=0.4)
-            if df_dyn_dens is not None:
-                idx_dyn = np.linspace(0, len(df_dyn) - 1, len(df_dyn_dens), dtype=int)
-                ax.scatter(idx_dyn, df_dyn.iloc[idx_dyn], c=df_dyn_dens, cmap=cmap_base, norm=norm, 
-                           marker='v', s=35, edgecolors='black', linewidths=0.3, zorder=4)
+            ax.plot(df_dyn, color='black', linestyle='--', alpha=0.3, label='Baseline Dynamic')
+        
+        # Plot Credits
+        df_c = pd.read_csv(f_cred, header=None).mean(axis=1)
+        ax.plot(df_c, color='steelblue', linewidth=2, label=f'Credits Algorithm')
+        
+        # Overlay Densità
+        if os.path.exists(f_dens):
+            df_d = pd.read_csv(f_dens, header=None).mean(axis=1)
+            cmap = plt.get_cmap('RdYlGn')
+            norm = mcolors.BoundaryNorm([0.0, 0.5, 0.7, 0.8, 0.9, 1.0], cmap.N)
+            idx_c = np.linspace(0, len(df_c)-1, len(df_d), dtype=int)
+            sc = ax.scatter(idx_c, df_c.iloc[idx_c], c=df_d, cmap=cmap, norm=norm, 
+                            marker='^', s=60, edgecolors='black', label='Density Marker', zorder=5)
+            plt.colorbar(sc, ax=ax, label='Density')
 
-        # Plot Credits (Blu con triangoli rivolti in alto)
-        file_cred = get_file_path(base_dir, strategy, p_str, k, seq_type, alpha, phi, "results")
-        file_dens = get_file_path(base_dir, strategy, p_str, k, seq_type, alpha, phi, "density")
+        # Speedup nel titolo
+        title_str = f"{dataset_name} | {target_folder.upper()}\nα={alpha}, φ={phi}, k={k}"
+        if baseline_time and os.path.exists(f_time):
+            c_time = pd.read_csv(f_time, header=None).mean().mean()
+            speedup = baseline_time / c_time
+            title_str += f" | Speedup: {speedup:.2f}x"
 
-        if os.path.exists(file_cred):
-            df_cred = pd.read_csv(file_cred, header=None).mean(axis=1)
-            ax.plot(df_cred, label=f'Incremental', color='steelblue', linewidth=1.5)
-            
-            if os.path.exists(file_dens):
-                df_dens = pd.read_csv(file_dens, header=None).mean(axis=1)
-                idx_cred = np.linspace(0, len(df_cred) - 1, len(df_dens), dtype=int)
-                sc = ax.scatter(idx_cred, df_cred.iloc[idx_cred], c=df_dens, cmap=cmap_base, norm=norm, 
-                                marker='^', s=45, edgecolors='black', linewidths=0.5, zorder=5)
-        else:
-            ax.set_title(f"k={k} (Mancante)", color='red')
+        ax.set_title(title_str, fontweight='bold')
+        ax.set_xlabel("Iterations")
+        ax.set_ylabel("Quasi-Clique Size")
+        ax.legend(loc='lower right')
+        ax.grid(True, alpha=0.2)
 
-        ax.set_title(f"k = {k}", fontweight='bold')
-        ax.grid(True, linestyle=':', alpha=0.5)
-        if idx == 0: ax.legend(loc='upper left', fontsize='small')
+        # Salvataggio nella sottocartella specifica
+        filename = f"a{alpha}_p{phi}_k{k}.png"
+        save_path = os.path.join(save_dir, filename)
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close()
 
-    # Pulizia subplots vuoti
-    for i in range(len(k_values), len(axes_flat)):
-        fig.delaxes(axes_flat[i])
-
-    if sc is not None:
-        cbar = fig.colorbar(sc, ax=axes, shrink=0.7, aspect=25, pad=0.02)
-        cbar.set_label('Density', rotation=270, labelpad=15)
-
-    title_suffix = f"({strategy.capitalize()}" + (f" - {seq_type})" if strategy=="mixed" else ")")
-    fig.suptitle(f"{dataset_name} {title_suffix} | p={p_str} | α={alpha}, φ={phi}", fontsize=16, fontweight='bold')
-    plt.show()
-
-def plot_speedup(dataset_name, p_str, k_values, strategy="standard", seq_type="erdos", alpha=0.5, phi=0.6):
-    base_dir = f"../Esperimenti/{dataset_name}/{strategy}/"
-    file_dyn_time = f"{base_dir}times_dynamic_{p_str}.csv" if strategy == "standard" else f"{base_dir}times_dynamic_{seq_type}_{p_str}.csv"
+# --- Main ---
+if __name__ == "__main__":
+    ALPHAS = [0.12, 0.3, 0.5]
+    PHIS = [0.4, 0.6, 0.8]
+    KS = [32, 64, 128,256,512]
     
-    try:
-        baseline_time = pd.read_csv(file_dyn_time, header=None).mean().mean()
-    except:
-        print(f"Errore: Baseline tempi non trovata in {file_dyn_time}")
-        return
-
-    speedups = []
-    valid_ks = []
-
-    for k in k_values:
-        file_time = get_file_path(base_dir, strategy, p_str, k, seq_type, alpha, phi, "times")
-        if os.path.exists(file_time):
-            cred_time = pd.read_csv(file_time, header=None).mean().mean()
-            speedups.append(baseline_time / cred_time)
-            valid_ks.append(str(k))
-
-    if not speedups: 
-        print("Nessun dato di speedup trovato.")
-        return
-
-    plt.figure(figsize=(10, 5))
-    bars = plt.bar(valid_ks, speedups, color='steelblue', edgecolor='black', zorder=3)
-    plt.axhline(y=1.0, color='red', linestyle='--', label='Baseline Threshold', zorder=2)
+    DATASET = "link-dynamic-plwiki"
+    P_STR = "0.0"
     
-    plt.ylabel("Speedup Multiplier (x)", fontweight='bold')
-    plt.xlabel("k (MinHash Size)", fontweight='bold')
-    plt.title(f"Speedup vs Baseline | {dataset_name} ({strategy})", fontweight='bold')
-    plt.grid(axis='y', linestyle=':', alpha=0.7)
+    # 1. Esegui Standard
+    generate_all_plots(DATASET, P_STR, KS, ALPHAS, PHIS, strategy="standard")
     
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, height + 0.02, f'{height:.2f}x', ha='center', va='bottom', fontweight='bold')
-    
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # 2. Esegui i Mixed
+    for mixed_type in []:
+        generate_all_plots(DATASET, P_STR, KS, ALPHAS, PHIS, strategy="mixed", seq_type=mixed_type)
 
-
-KS = [32]
-DATASET = "Amazon0601_clean"
-PROB = "0.1"
-STRATEGIA = "standard" # or "standard"
-SEQ = "erdos"       # erdos, power, rich
-ALPHA = 0.12
-PHI = 0.6
-
-plot_speedup(DATASET, PROB, KS, strategy=STRATEGIA, seq_type=SEQ, alpha=ALPHA, phi=PHI)
-plot_quasi_clique_results_grid(DATASET, PROB, KS, strategy=STRATEGIA, seq_type=SEQ, alpha=ALPHA, phi=PHI)
+    print("\nProcesso completato! Trovi i grafici ordinati in 'plots/{}'".format(DATASET))

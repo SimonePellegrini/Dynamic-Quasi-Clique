@@ -133,15 +133,83 @@ def generate_mixed_sequences(file_name, number_of_sequences=1, prob=0.1, additio
     file_obj.close() 
 
 
-datasets=["Amazon0601",]
-probabilities = [0.0,0.1,0.2]
+datasets=["linux"]
+probabilities = [0.0]
 types = ["erdos","rich","power"]
 
 for prob in probabilities:
     for name in datasets:
         for type in types:
-            generate_mixed_sequences(name,5,prob,0.4,type)
+            ''''''
+            #generate_mixed_sequences(name,10,prob,0.49999,type)
 
 for prob in probabilities:
     for name in datasets:
-            generate_sequences(name,5,prob,0.4)
+            ''''''
+            #generate_sequences(name,10,prob,0.4999)
+
+
+
+import sys
+from collections import defaultdict
+import sys
+from collections import defaultdict
+
+def process_dynamic_graph(input_path, output_path):
+    active_edges = set()   # archi attivi finali (non orientati)
+    nodes = set()          # insieme dei nodi apparsi in operazioni valide
+    output_lines = []      # memorizziamo le operazioni dinamiche valide
+    num_op = 0
+    with open(input_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+
+            try:
+                u = int(parts[0])
+                v = int(parts[1])
+                op = int(parts[2])
+            except ValueError:
+                continue  # salta header
+
+            # rimuove self-loop
+            if u == v:
+                continue
+
+            # rende non orientato
+            a, b = min(u, v), max(u, v)
+            edge = (a, b)
+
+            if op == 1:
+                if edge not in active_edges:
+                    num_op+=1
+                    active_edges.add(edge)
+                    output_lines.append(f"i {a} {b}")
+                    nodes.add(a)
+                    nodes.add(b)
+
+            elif op == -1:
+                if edge in active_edges:
+                    num_op+=1
+                    active_edges.remove(edge)
+                    output_lines.append(f"d {a} {b}")
+                    nodes.add(a)
+                    nodes.add(b)
+
+    # Scrittura file finale
+    with open(output_path, "w") as out:
+        # prima riga: numero nodi e numero archi finali
+        out.write(f"{len(nodes)} {num_op}\n")
+
+        # poi tutte le operazioni dinamiche valide
+        for line in output_lines:
+            out.write(line + "\n")
+
+
+if __name__ == "__main__":
+    process_dynamic_graph("../Datasets/link-dynamic-plwiki.txt","./Sequences/StandardSequences/link-dynamic-plwiki_0.0.txt")

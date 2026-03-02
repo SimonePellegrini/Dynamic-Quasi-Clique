@@ -103,7 +103,7 @@ public:
      * Insert the element u into the Dynamic MinHash structure.
      */
     void insert(uint32_t u)
-    {
+    { 
         for (size_t i = 0; i < k; i++)
         {
             uint32_t h = hash(i, u);
