@@ -54,7 +54,7 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
 
     if (!file.is_open()) {
         cout << "Error: the file doesn't exist!" << endl; 
-        return;
+        return {};
     }
 
     file >> number_of_experiments >> n >> m;
