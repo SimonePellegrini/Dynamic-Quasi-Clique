@@ -54,6 +54,7 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
 
     if (!file.is_open()) {
         cout << "Error: the file doesn't exist!" << endl; 
+        return;
     }
 
     file >> number_of_experiments >> n >> m;
@@ -217,7 +218,10 @@ template <typename T>
 void saveToCSV(const std::string& filename, const std::vector<std::vector<T>>& data) {
     std::ofstream outFile(filename);
 
-    if (!outFile.is_open() || data.empty()) return;
+    if (!outFile.is_open() || data.empty()){
+        cout<<"Error:the file has not been saved correctly!"<<endl;
+        return;
+    }
     size_t max_time_steps = 0;
     for (const auto& exp : data) {
         if (exp.size() > max_time_steps) max_time_steps = exp.size();
@@ -353,17 +357,18 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
     }
       
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv" , creditsSolution);
+        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv" , creditsSolution);
     }
     else{
-        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv", creditsSolution);
+        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv", creditsSolution);
     }    
 }
 
 void experimentCreditsPerformance(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,string strategy="standard",string type="erdos",int q_freq=10) {
     string p_str = to_string((int)(prob*100));
+    
      //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     
@@ -392,10 +397,10 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
     }
 
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:" +to_string(k) + ".csv", executionTimes);
+        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k" +to_string(k) + ".csv", executionTimes);
     }
     else{
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha:"+to_string(alpha)+"_phi:"+to_string(phi)+"_k:"+to_string(k)+ ".csv",executionTimes);
+        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv",executionTimes);
     } 
 }
 
@@ -464,6 +469,10 @@ void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, 
 int main(int argc, const char * argv[]){
     /*prende dalla riga di comando i parametri in input*/
   
+    if (argc < 8) {
+        cerr << "Use: " << argv[0] << " <phi> <alpha> <k> <fileName> <p> <gamma> <b>" << endl;
+        return 1;
+    }
     float phi = atof(argv[1]);
     float alpha = atof(argv[2]);
     string fileName = argv[4];
@@ -474,6 +483,7 @@ int main(int argc, const char * argv[]){
     /* Inizializza il dataset da leggere */
     read_graph("../Datasets/"+fileName+".txt");
 
+    
 
     cout<<fileName<<endl;
     cout<<"standard"<<endl;

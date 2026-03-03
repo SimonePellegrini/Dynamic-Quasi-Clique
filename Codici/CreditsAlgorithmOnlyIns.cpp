@@ -35,7 +35,7 @@ class creditsAlgorithm{
         int best_clique_size=0; 
         int count_faults = 0;
         int count_removes = 0;
-        vector<set<int>> neighborhood;
+        vector<vector<int>> neighborhood;
         vector<DynamicMinHash*> signature; 
         TabulationHash **hashes;
         vector<int> credits;
@@ -138,72 +138,16 @@ creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double ga
     }
 }
 
-
-//remove the edge and update credits and quasi-cliques
-void creditsAlgorithm::remove_edge(int u, int v){
-    
-    //neighborhood[u].erase(v);
-    //neighborhood[v].erase(u);
-    degree[v]--;
-    degree[u]--;
-    
-    //update the minhash signature
-    if(signature[u]->remove(v)){
-        signature[u]->insert(u);
-        for(auto x:neighborhood[u]){
-            signature[u]->insert(x);
-        }
-    }
-
-
-    if(signature[v]->remove(u)){
-        signature[v]->insert(v);
-        for(auto x:neighborhood[v]){
-            signature[v]->insert(x);
-        }
-    }
-
-    //update the credits distribuited
-    if(received_credits[{u,v}]){
-        credits[v]--;
-        received_credits[{u,v}]=false;
-        count[v]++;
-    }
-    if(received_credits[{v,u}]){
-        credits[u]--;
-        received_credits[{v,u}]=false;
-        count[u]++;
-    }
-    
-    //check wheter it is necessary to update the quasi-clique
-
-    if(past_credits[u]+count[u]>=(1+alpha)*past_credits[u] && sol_size[u]>=phi*(pq.rbegin()->first)){
-        count[u] = 0;
-        past_credits[u] = credits[u];
-        pq.erase({sol_size[u],u});
-        sol_size[u] = visit_node(u).size();
-        pq.insert({sol_size[u],u});
-    }
-
-    if(past_credits[v]+count[v]>=(1+alpha)*past_credits[v] && sol_size[v]>=phi*(pq.rbegin()->first)){
-        count[v] = 0;
-        past_credits[v] = credits[v];
-        pq.erase({sol_size[v],v});
-        sol_size[v] = visit_node(v).size();
-        pq.insert({sol_size[v],v});
-    }
-    
-}
-
 //add the edge to the graph and update credits and quasi-cliques, if necessary
 void creditsAlgorithm::add_edge(int u, int v){
     
     //insert the edge in the graph
-    neighborhood[v].insert(u);
-    neighborhood[u].insert(v);
+    neighborhood[v].push_back(u);
+    neighborhood[u].push_back(v);
     degree[v] = neighborhood[v].size();
     degree[u] =  neighborhood[u].size();
 
+    //update the minhash signature
     for(int i=0;i<k;i++){
         int hv = ((long long)a[i]*v + b[i]) % p;
         signatures[u][i] = min(signatures[u][i], hv);
@@ -215,19 +159,15 @@ void creditsAlgorithm::add_edge(int u, int v){
     //update credits
     if(degree[u] >= gamma*(degree[v])){
         credits[v]++;
-        //received_credits[{u,v}]= true;
-        //count[v]++;
+
     }
 
     if(degree[v] >= gamma*(degree[u])){
         credits[u]++;
-        //received_credits[{v,u}]= true;
-        //count[u]++;
     }
     
     //check wheter it is necessary to update the quasi-clique
     if(credits[u]>=(1+alpha)*past_credits[u] && credits[u]>=phi*best_clique_size){
-        //count[u] = 0;
         past_credits[u] = credits[u];
         vector<int> sol = visit_node(u);
         if(sol_size[u]>best_clique_size){
@@ -302,15 +242,6 @@ double creditsAlgorithm::ct_scores(int v1, int v2) {
 //return the best clique mantained
 
 int creditsAlgorithm::return_dim(){
-    /*
-    // take the node on the top of the priority que
-    int node = pq.rbegin()->second;
-    vector<int> solution = obtain_solution(node);
-    best_clique = node;
-    
-    //return its size
-    return solution.size();
-    */
    return best_clique_size;
 }
 
@@ -334,13 +265,10 @@ vector<int> creditsAlgorithm::getGammaDegree(){
     return gammaDeg;
 }
 
-//return the density associated to the best clique found so far
-#include <algorithm> // Necessario per utilizzare std::find
-
 double creditsAlgorithm::return_density(){
     vector<int> cur_sol = best_clique;
     
-    // Se la clique ha 0 o 1 nodo, la densità è 0
+    
     if(cur_sol.size() <= 1){
         return 0.0;
     }
@@ -349,10 +277,9 @@ double creditsAlgorithm::return_density(){
     for (int i : cur_sol) {
         for (int i2 : cur_sol) {
             if(i != i2) {
-                // Verifichiamo se i2 è presente nel vettore dei vicini di i
+               
                 bool i_has_i2 = std::find(neighborhood[i].begin(), neighborhood[i].end(), i2) != neighborhood[i].end();
                 
-                // Verifichiamo se i è presente nel vettore dei vicini di i2
                 bool i2_has_i = std::find(neighborhood[i2].begin(), neighborhood[i2].end(), i) != neighborhood[i2].end();
                 
                 if(i_has_i2 && i2_has_i){
