@@ -238,8 +238,8 @@ void saveToCSV(const std::string& filename, const std::vector<std::vector<T>>& d
 
 
 
-void countCreditsAndGammeDegree(string fileName, float phi, float alpha, float gamma, float b, int k, float prob) {
-    string p_str = to_string(prob).substr(0, 3);
+void countCreditsAndGammeDegree(string fileName, float phi, float alpha, float gamma, float b, int k, int prob) {
+    string p_str = to_string((int)(prob*100));
     std::ifstream file("./Sequences/StandardSequences/" + fileName + "_" + p_str + ".txt");
 
     if (!file.is_open()) {
@@ -280,8 +280,8 @@ void countCreditsAndGammeDegree(string fileName, float phi, float alpha, float g
     file.close();
 }
 
-void experimentDynamicOnly(string fileName, float gamma, float b, float prob, float perc = 0.1,string strategy="standard",string type="erdos") {
-    string p_str = to_string(prob).substr(0, 3);
+void experimentDynamicOnly(string fileName, float gamma, int b, float prob, float perc = 0.1,string strategy="standard",string type="erdos") {
+    string p_str = to_string((int)(prob*100));
 
     //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
@@ -324,7 +324,7 @@ void experimentDynamicOnly(string fileName, float gamma, float b, float prob, fl
 }
 
 void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,float perc = 0.1,string strategy="standard",string type="erdos") {
-    string p_str = to_string(prob).substr(0, 3);
+    string p_str = to_string((int)(prob*100));
     //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     vector<vector<int>> creditsSolution;
@@ -363,7 +363,7 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
 }
 
 void experimentCreditsPerformance(string fileName, float phi, float alpha, float gamma, float b, int k, float prob,string strategy="standard",string type="erdos",int q_freq=10) {
-    string p_str = to_string(prob).substr(0, 3);
+    string p_str = to_string((int)(prob*100));
      //load the dataset
     vector<vector<GraphOp>> all_experiments_ops = loadDataset(fileName,prob,strategy,type);
     
@@ -400,7 +400,7 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
 }
 
 void experimentDynamicPerformance(string fileName, float gamma, float b, float prob,string strategy = "standard",string type="erdos",int q_freq=10) {
-    string p_str = to_string(prob).substr(0, 3);
+    string p_str = to_string((int)(prob*100));
     std::ifstream file;
 
     
@@ -477,9 +477,9 @@ int main(int argc, const char * argv[]){
 
     cout<<fileName<<endl;
     cout<<"standard"<<endl;
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard","erdos",10,false);
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard","erdos",10,true);
     cout<<"erdos"<<endl;
-    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
+    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
     cout<<"rich"<<endl;
     //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich");
     //cout<<"power"<<endl;
