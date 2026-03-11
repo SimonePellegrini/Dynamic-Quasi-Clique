@@ -1,5 +1,5 @@
-#ifndef CREDITS_ALGO_IMPROVED2
-#define CREDITS_ALGO_IMPROVED2
+#ifndef CREDITS_ALGO_ONLYINS
+#define CREDITS_ALGO_ONLYINS
 #include <unordered_set>
 #include <iostream>
 #include <vector>
@@ -17,18 +17,17 @@
 
 using namespace std;
 
-int p = pow(2,31)-1;
 
-struct pair_hash {
-    size_t operator()(const pair<int,int>& p) const {
-        return hash<int>()(p.first) ^ (hash<int>()(p.second) << 1);
-    }
-};
 
-class creditsAlgorithm{
+class creditsAlgorithmOnlyIns{
     
     private:
-    
+
+        struct pair_hash {
+            size_t operator()(const pair<int,int>& p) const {
+                return hash<int>()(p.first) ^ (hash<int>()(p.second) << 1);
+            }
+        };  
         int k,n,m;
         float alpha,phi;
         double gamma,beta;
@@ -48,11 +47,13 @@ class creditsAlgorithm{
         vector<int> best_clique;
         vector<int> obtain_solution(int node);
         vector<vector<int>> signatures;      // MinHash signatures
-        vector<int> a,b;    
+        vector<int> a,b;  
+        int p = pow(2,31)-1;
+
 
     public:
-        creditsAlgorithm(int n,int m, float phi,float alpha, double gamma,double beta,int k);
-        ~creditsAlgorithm();
+        creditsAlgorithmOnlyIns(int n,int m, float phi,float alpha, double gamma,double beta,int k);
+        ~creditsAlgorithmOnlyIns();
         vector<int> getCredits();
         vector<int> getGammaDegree();
         vector<int> returnBestClique();
@@ -68,7 +69,7 @@ class creditsAlgorithm{
 
 
 
-creditsAlgorithm::~creditsAlgorithm(){
+creditsAlgorithmOnlyIns::~creditsAlgorithmOnlyIns(){
 
    for(int i=0; i<n; i++){ 
         if(signature[i] != nullptr) delete signature[i];
@@ -82,7 +83,7 @@ creditsAlgorithm::~creditsAlgorithm(){
     }
 };
 
-creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double gamma,double beta,int k){
+creditsAlgorithmOnlyIns::creditsAlgorithmOnlyIns(int n,int m, float phi,float alpha, double gamma,double beta,int k){
 
     this->n = n;
     this->m = m;
@@ -139,7 +140,7 @@ creditsAlgorithm::creditsAlgorithm(int n,int m, float phi,float alpha, double ga
 }
 
 //add the edge to the graph and update credits and quasi-cliques, if necessary
-void creditsAlgorithm::add_edge(int u, int v){
+void creditsAlgorithmOnlyIns::add_edge(int u, int v){
     
     //insert the edge in the graph
     neighborhood[v].push_back(u);
@@ -191,7 +192,7 @@ void creditsAlgorithm::add_edge(int u, int v){
 
 //takes in input a node and try to extract a quasi-clique out of it
 
-vector<int> creditsAlgorithm::visit_node(int node) {
+vector<int> creditsAlgorithmOnlyIns::visit_node(int node) {
     vector<int> sol = obtain_solution(node);
     int res = sol.size();
     double tmp = (double)res / (double)(degree[node]+1);
@@ -204,7 +205,7 @@ vector<int> creditsAlgorithm::visit_node(int node) {
 
 //compute the set S associated to a node
 
-vector<int> creditsAlgorithm::obtain_solution(int node){
+vector<int> creditsAlgorithmOnlyIns::obtain_solution(int node){
     vector<int> sol;
     sol.push_back(node);
     for (int v : neighborhood[node]) {
@@ -215,7 +216,7 @@ vector<int> creditsAlgorithm::obtain_solution(int node){
 
 //min-hash approximation of the containment score
 
-double creditsAlgorithm::ct_score_minhash(int u, int v){
+double creditsAlgorithmOnlyIns::ct_score_minhash(int u, int v){
     int inter = 0;
 
     for(int i=0;i<k;i++){
@@ -229,7 +230,7 @@ double creditsAlgorithm::ct_score_minhash(int u, int v){
 
 //function to compute the containment score
 
-double creditsAlgorithm::ct_scores(int v1, int v2) {
+double creditsAlgorithmOnlyIns::ct_scores(int v1, int v2) {
     int res = 0;
     unordered_set<int> st;
     st.insert(v1);
@@ -241,17 +242,17 @@ double creditsAlgorithm::ct_scores(int v1, int v2) {
 
 //return the best clique mantained
 
-int creditsAlgorithm::return_dim(){
+int creditsAlgorithmOnlyIns::return_dim(){
    return best_clique_size;
 }
 
 //return the number of credits associated to each node in the graph
-vector<int> creditsAlgorithm::getCredits(){
+vector<int> creditsAlgorithmOnlyIns::getCredits(){
     return credits;
 }
 
 //computes and return the gamma-degree associated to each node in the graph
-vector<int> creditsAlgorithm::getGammaDegree(){
+vector<int> creditsAlgorithmOnlyIns::getGammaDegree(){
     vector<int> gammaDeg;
     gammaDeg.resize(n);
     for(int i = 0; i < n; i++){
@@ -265,7 +266,7 @@ vector<int> creditsAlgorithm::getGammaDegree(){
     return gammaDeg;
 }
 
-double creditsAlgorithm::return_density(){
+double creditsAlgorithmOnlyIns::return_density(){
     vector<int> cur_sol = best_clique;
     
     

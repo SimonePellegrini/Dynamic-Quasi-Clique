@@ -1,7 +1,7 @@
 import os 
 import random
 
-def generate_sequences(file_name, number_of_sequences = 1, prob = 0.1):
+def generate_sequences(file_name, number_of_sequences = 1, prob = 0.1,additional_operations = 0.2):
     #open the file
     with open('../Datasets/'+file_name+".txt",'r') as file:
         lines = file.readlines()
@@ -25,8 +25,9 @@ def generate_sequences(file_name, number_of_sequences = 1, prob = 0.1):
             file_obj.write("i "+str(u) +" "+ str(v))
             insert_edges.append((u,v))
 
-        i = m//2+1
-        while i<m :
+        i = 0
+        edges = m//2+1
+        while i<m*additional_operations :
             v = random.random()
             if v<prob:
                 idx = random.randrange(len(insert_edges))
@@ -38,11 +39,12 @@ def generate_sequences(file_name, number_of_sequences = 1, prob = 0.1):
                 file_obj.write("d "+str(u) +" "+ str(v))
                 
             else:
-                u = graph[i].split(" ")[0]
-                v = graph[i].split(" ")[1]
+                u = graph[edges].split(" ")[0]
+                v = graph[edges].split(" ")[1]
                 file_obj.write("i "+str(u) +" "+ str(v))
                 insert_edges.append((u,v))
-                i+=1
+                edges+=1
+            i+=1
         file_obj.write("e 0 0\n")
         
 import random
@@ -131,21 +133,23 @@ def generate_mixed_sequences(file_name, number_of_sequences=1, prob=0.1, additio
     file_obj.close() 
 
 
-datasets=["ego-facebook","email-enron","loc-gowalla","web-stanford","ca-hepph","ca-condmat"]
-probabilities = [0.1,0.05]
-types = ["erdos"]
+datasets=["web-google"]
+probabilities = [0.05,0.1]
+types = ["rich"]
 
 for prob in probabilities:
     for name in datasets:
         for type in types:
-            generate_mixed_sequences(name,5,prob,0.5,type)
+            ''''''
+            #generate_mixed_sequences(name,10,prob,0.49999,type)
 
 for prob in probabilities:
     for name in datasets:
-            generate_sequences(name,5,prob)
+            ''''''
+            #generate_sequences(name,10,prob,0.4999)
 
 
-'''
+
 import sys
 from collections import defaultdict
 import sys
@@ -200,13 +204,14 @@ def process_dynamic_graph(input_path, output_path):
     # Scrittura file finale
     with open(output_path, "w") as out:
         # prima riga: numero nodi e numero archi finali
+        out.write("1")
         out.write(f"{len(nodes)} {num_op}\n")
 
         # poi tutte le operazioni dinamiche valide
         for line in output_lines:
             out.write(line + "\n")
+        out.write("e 0 0")
 
 
 if __name__ == "__main__":
-    process_dynamic_graph("../Datasets/link-dynamic-plwiki.txt","./Sequences/StandardSequences/link-dynamic-plwiki_0.0.txt")
-'''
+    process_dynamic_graph("../Datasets/link-dynamic-frwiki.txt","./Sequences/StandardSequences/link-dynamic-frwiki_0.0.txt")
