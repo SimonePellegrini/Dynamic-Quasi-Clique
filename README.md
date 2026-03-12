@@ -9,6 +9,6 @@ This repository contains the codes for the paper "Detecting Large Quasi-cliques 
 - main.c++ contains the code used to generate the experiments
 
 To compile the code you need gcc 10 or above and to use the O3 optimizer.
-'''
+```
 g++ -o dyn -O3 main.c++
-'''
+```
