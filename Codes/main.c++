@@ -142,8 +142,8 @@ void countCreditsAndGammeDegree(string fileName, float phi, float alpha, float g
         file_gamma.push_back(algo_cred.getGammaDegree());
     }
     
-    saveToCSV("../Esperimenti/"+fileName+"/number_of_credits_"+p_str+".csv", file_credits);
-    saveToCSV("../Esperimenti/"+fileName+"/gamma_degree_"+p_str+".csv", file_gamma);
+    saveToCSV("../Experiments/"+fileName+"/number_of_credits_"+p_str+".csv", file_credits);
+    saveToCSV("../Experiments/"+fileName+"/gamma_degree_"+p_str+".csv", file_gamma);
 }
 
 void experimentDynamicOnly(string fileName, float gamma, int b, float prob, float perc = 0.1,string strategy="standard",string type="erdos") {
@@ -180,12 +180,12 @@ void experimentDynamicOnly(string fileName, float gamma, int b, float prob, floa
     }
     
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/"+fileName+"/standard/density_dynamic_"+p_str+".csv",dynamicDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/standard/results_dynamic_" + p_str + ".csv", dynamicSolution);
+        saveToCSV("../Experiments/"+fileName+"/standard/density_dynamic_"+p_str+".csv",dynamicDensity);
+        saveToCSV("../Experiments/" + fileName + "/standard/results_dynamic_" + p_str + ".csv", dynamicSolution);
     }
     else{
-        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_dynamic_"+type+"_"+p_str+".csv",dynamicDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_dynamic_"+type+"_"+p_str + ".csv", dynamicSolution);
+        saveToCSV("../Experiments/"+fileName+"/mixed/density_dynamic_"+type+"_"+p_str+".csv",dynamicDensity);
+        saveToCSV("../Experiments/" + fileName + "/mixed/results_dynamic_"+type+"_"+p_str + ".csv", dynamicSolution);
     }    
 }
 
@@ -221,12 +221,12 @@ void experimentCreditsOnly(string fileName, float phi, float alpha, float gamma,
     
       
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv" , creditsSolution);
+        saveToCSV("../Experiments/"+fileName+"/standard/density_credits_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Experiments/" + fileName + "/standard/results_credits_" + p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv" , creditsSolution);
     }
     else{
-        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv", creditsSolution);
+        saveToCSV("../Experiments/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Experiments/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv", creditsSolution);
     }    
 }
 
@@ -261,12 +261,12 @@ void experimentCreditsOnlyOnlyIns(string fileName, float phi, float alpha, float
     
       
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/"+fileName+"/standard/density_credits_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/standard/results_credits_" + p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv" , creditsSolution);
+        saveToCSV("../Experiments/"+fileName+"/standard/density_credits_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Experiments/" + fileName + "/standard/results_credits_" + p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv" , creditsSolution);
     }
     else{
-        saveToCSV("../Esperimenti/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv", creditsSolution);
+        saveToCSV("../Experiments/"+fileName+"/mixed/density_credits_"+type+"_"+p_str+"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+".csv",creditsDensity);
+        saveToCSV("../Experiments/" + fileName + "/mixed/results_credits_"+type+"_"+p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv", creditsSolution);
     }    
 }
 
@@ -301,10 +301,10 @@ void experimentCreditsPerformance(string fileName, float phi, float alpha, float
     }
 
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k" +to_string(k) + ".csv", executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/standard/times_credits_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k" +to_string(k) + ".csv", executionTimes);
     }
     else{
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv",executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv",executionTimes);
     } 
 }
 
@@ -337,10 +337,10 @@ void experimentCreditsPerformanceOnlyIns(string fileName, float phi, float alpha
     }
 
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/" + fileName + "/standard/times_credits_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k" +to_string(k) + ".csv", executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/standard/times_credits_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k" +to_string(k) + ".csv", executionTimes);
     }
     else{
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv",executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/mixed/times_credits_"+type+"_" + p_str +"_alpha"+to_string(alpha)+"_phi"+to_string(phi)+"_k"+to_string(k)+ ".csv",executionTimes);
     } 
 }
 
@@ -373,10 +373,10 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
         executionTimes.back().push_back(duration.count());
     }
     if(strategy == "standard"){
-        saveToCSV("../Esperimenti/" + fileName + "/standard/times_dynamic_" + p_str + ".csv", executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/standard/times_dynamic_" + p_str + ".csv", executionTimes);
     }
     else{
-        saveToCSV("../Esperimenti/" + fileName + "/mixed/times_dynamic_"+type+"_" + p_str + ".csv", executionTimes);
+        saveToCSV("../Experiments/" + fileName + "/mixed/times_dynamic_"+type+"_" + p_str + ".csv", executionTimes);
     }
 }
 
@@ -439,10 +439,8 @@ int main(int argc, const char * argv[]){
     //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
     cout<<"rich"<<endl;
     gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich",10,false);
-    cout<<"power"<<endl;
-    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","power");
-    
-    //gridSearchCreditsAlgorithm(fileName, gamma,b,p);
+ 
+
 
     cout << "Experiments completed!" << endl;
     return 0;
