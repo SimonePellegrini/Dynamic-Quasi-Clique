@@ -1,13 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include "DynamicNBSim.c++"
-#include "DynamicNBSimOnlyIns.c++"
 #include <random>
 #include <chrono>
 #include <sstream>  
 #include <cstdlib>  
 #include <algorithm> 
-#include "FastNBSim.c++"
 #include "CreditsAlgorithm.cpp"
 #include "CreditsAlgorithmOnlyIns.cpp"
 #include "math.h"
@@ -82,23 +80,6 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
     file.close();
     cout<<"file read!"<<endl;
     return all_experiments_ops;
-}
-
-//computes the dimensions of the quasi-cliques obtained after inserting all the edges in the graph
-//using the static algorithm
-
-void getQsSize(string fileName,float gamma, float b){
-    auto base =  FastNBSim(n,gamma,b);
-    for(auto x: graph){
-        base.add_edge(x.first,x.second);
-    }
-    ofstream qsSize("../Esperimenti/"+fileName+"/Qs_Size_b="+to_string(b)+".csv");
-    vector<int> qs_size = base.QuasiCliqueSizes();
-    qsSize<<qs_size[0];
-    for(int i=1; i<qs_size.size(); i++){
-        qsSize<<","<<qs_size[i];
-    }
-    qsSize.close();
 }
 
 template <typename T>
