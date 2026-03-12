@@ -1,11 +1,14 @@
-Per eseguire gli esperimenti bisogna strutturare la directory in questa maniera:
+This repository contains the codes for the paper "Detecting Large Quasi-cliques on Dynamic Networks". 
 
-Cartella Codici:
-- contiene gli script e il codice sorgente
-- contiene una sotto cartella "Sequences" divisa a sua volta in "MixedSequences" e "StandardSequences"
+- CreditsAlgorithm: contains the implementation of the fully dynamic credits algorithm
+- CreditsAlgorithmOnlyIns: contains the implementation of the incremental version of the credits algorithm
+- DynamicMinHash: is an implementation of the dynamic minhash data structure cited in the paper
+- DynamincNBSim: contains the implementation of the fully dynamic baseline
+- TabulationHash: contains the implementation of the tabulation hashing used to compute the minhash signature
+- GenerateSequences: contains the code used to generate the synthetic sequences cited in the paper
+- main.c++ contains the code used to generate the experiments
 
-Cartella Datasets:
-- contiene i file txt dei datasets
-
-Cartella Esperimenti:
-- per ogni dataset contiene una cartella con il suo nome (e.g. per il dataset ego-facebook contiene una cartella con questo nome), ogni cartella del dataset e divisa in due sottocartelle: "mixed" e "standard"
+To compile the code you need gcc 10 or above and to use the O3 optimizer.
+'''
+g++ -o dyn -O3 main.c++
+'''
