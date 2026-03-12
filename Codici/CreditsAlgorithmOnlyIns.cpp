@@ -119,13 +119,11 @@ creditsAlgorithmOnlyIns::creditsAlgorithmOnlyIns(int n,int m, float phi,float al
         signature[i]->insert(i);
     }
 
-     // inizializzo funzioni hash
     for(int i=0;i<k;i++){
         a[i] = rand()%(p-1)+1;
         b[i] = rand();
     }
 
-    // inizializzo firme (self-loop)
     for(int i=0;i<n;i++){
         signatures[i].resize(k);
         for(int j=0;j<k;j++){
@@ -178,7 +176,6 @@ void creditsAlgorithmOnlyIns::add_edge(int u, int v){
     }
 
     if(credits[v]>=(1+alpha)*past_credits[v] && credits[v]>=phi*best_clique_size){
-        //count[v] = 0;
         past_credits[v] = credits[v];
         vector<int> sol = visit_node(v);
         if(sol.size()>best_clique_size){
