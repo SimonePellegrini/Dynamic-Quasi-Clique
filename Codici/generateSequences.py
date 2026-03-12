@@ -156,9 +156,9 @@ import sys
 from collections import defaultdict
 
 def process_dynamic_graph(input_path, output_path):
-    active_edges = set()   # archi attivi finali (non orientati)
-    nodes = set()          # insieme dei nodi apparsi in operazioni valide
-    output_lines = []      # memorizziamo le operazioni dinamiche valide
+    active_edges = set()    
+    nodes = set()          
+    output_lines = []      
     num_op = 0
     with open(input_path, "r") as f:
         for line in f:
@@ -175,13 +175,12 @@ def process_dynamic_graph(input_path, output_path):
                 v = int(parts[1])
                 op = int(parts[2])
             except ValueError:
-                continue  # salta header
+                continue  
 
-            # rimuove self-loop
+       
             if u == v:
                 continue
 
-            # rende non orientato
             a, b = min(u, v), max(u, v)
             edge = (a, b)
 
@@ -201,13 +200,12 @@ def process_dynamic_graph(input_path, output_path):
                     nodes.add(a)
                     nodes.add(b)
 
-    # Scrittura file finale
+   
     with open(output_path, "w") as out:
-        # prima riga: numero nodi e numero archi finali
+
         out.write("1")
         out.write(f"{len(nodes)} {num_op}\n")
 
-        # poi tutte le operazioni dinamiche valide
         for line in output_lines:
             out.write(line + "\n")
         out.write("e 0 0")
