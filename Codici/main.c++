@@ -84,121 +84,6 @@ vector<vector<GraphOp>> loadDataset(string fileName,float prob, string strategy,
     return all_experiments_ops;
 }
 
-//computes the speed up obtained using the DynamicFastNBSim algorithm
-//instead of the FastNBSim Algorithm
-
-void confrontoAlgo1Baseline(string fileName,int num_nodes, int num_edges,int s_rate,int k){
-    
-    int n_iter = 5;
-    double tot_time=0;
-    int j = 0;
-    double tempo_naive;
-
-    ofstream speed_up("../Esperimenti/"+fileName+"/speedup.txt");
-    ofstream tempoNBSim("../Esperimenti/"+fileName+"/tempoNBSim.txt");
-    ifstream tempo_baseline_naive("../Esperimenti/"+fileName+"/naiveAvgTime.csv");
-
-    tempo_baseline_naive>>tempo_naive;
-
-    for(int i=0; i<n_iter; i++){
-        j = 0;
-        auto base =  FastNBSim(num_nodes,0.9,0.6,k);
-        //cambia la permutazione del grafo
-        read_graph("../Datasets/"+fileName+".txt");
-        for(auto x: graph){
-            auto start = chrono::high_resolution_clock::now();
-            j++;
-            //aggiungi l'arco al grafo
-            base.add_edge(x.first,x.second);
-            if(j%s_rate == 0){
-                //usa l'algoritmo statico per trovare una buona quasi-clique
-                base.compute_result(false);
-            }
-            auto end = chrono::high_resolution_clock::now();
-            //resetta le variabili di FastNBSim (min-hash,ecc...)
-            base.reset_computation();
-            //somma il tempo di esecuzione dell'operazione
-            tot_time+=std::chrono::duration<double, std::milli>(end - start).count();
-        }   
-    }
-    tot_time = tot_time/n_iter;
-    tempoNBSim<<tot_time/graph.size();
-    speed_up<<((double)tot_time/graph.size())/tempo_naive;
-    speed_up.close();
-    tempo_baseline_naive.close();
-    tempoNBSim.close();
-
-}
-
-//computes in batch the quasi-cliques obtain using the FastNBSim algorithm
-
-void calcolaSoluzioniFastNBSIM(string fileName,int n,int m,int k){
-    
-    unordered_map<int,vector<double>> densita;
-    unordered_map<int,vector<int>> dimensione;
-    auto base =  FastNBSim(n,0.9,0.6,k);
-    ofstream confronto_dimensioni_apx("../Esperimenti/"+fileName+"/confrontoDimensioniApx.csv");
-    ofstream confronto_densita_apx("../Esperimenti/"+fileName+"/confrontodensitaApx.csv");
-    confronto_dimensioni_apx<<"numero di archi,dimensione"<<endl;
-    confronto_densita_apx<<"numero di archi,densita"<<endl;
-    int s_rate = m*0.1;
-    int n_iter = 100;
-    for(int i=0; i<n_iter; i++){
-        int j = 0;
-        for(auto x: graph){
-            base.add_edge(x.first,x.second);
-            if(++j%s_rate == 0 || j==m-1){
-                base.compute_result(true);
-                dimensione[j].push_back(base.getQuasiCliqueSize());
-                densita[j].push_back(base.getQuasiCliqueDensity());
-                base.reset_computation();
-            }
-            
-        }
-    }
-    
-    for(int i = 0; i < m; i+=s_rate) {
-        double tot_densita=0;
-        int tot_dimensione=0;
-        int c_d = 0;
-        int c_dim =0;
-        for(auto x:densita[i]){
-            if(x!=0){
-                tot_densita+=x;
-                c_d++;
-            }
-        }
-        for(auto x:dimensione[i]){
-            if(x!=0){
-                tot_dimensione+=x;
-                c_dim++;
-            }
-        }
-        confronto_dimensioni_apx<<i<<","<<tot_dimensione/c_dim<<endl;
-        confronto_densita_apx<<i<<","<<tot_densita/c_d<<endl;
-    }
-    double tot_densita=0;
-    int tot_dimensione=0;
-    int c_d = 0;
-    int c_dim =0;
-    for(auto x:densita[m-1]){
-        if(x!=0){
-            tot_densita+=x;
-            c_d++;
-        }
-    }
-    for(auto x:dimensione[m-1]){
-        if(x!=0){
-            tot_dimensione+=x;
-            c_dim++;
-        }
-    }
-    confronto_dimensioni_apx<<m-1<<","<<tot_dimensione/c_dim<<endl;
-    confronto_densita_apx<<m-1<<","<<tot_densita/c_d<<endl;
-    confronto_dimensioni_apx.close();
-    confronto_densita_apx.close();
-}
-
 //computes the dimensions of the quasi-cliques obtained after inserting all the edges in the graph
 //using the static algorithm
 
@@ -216,7 +101,6 @@ void getQsSize(string fileName,float gamma, float b){
     qsSize.close();
 }
 
-//helps to 
 template <typename T>
 void saveToCSV(const std::string& filename, const std::vector<std::vector<T>>& data) {
     std::ofstream outFile(filename);
@@ -548,7 +432,7 @@ void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, 
 
 
 int main(int argc, const char * argv[]){
-    /*prende dalla riga di comando i parametri in input*/
+
   
     if (argc < 8) {
         cerr << "Use: " << argv[0] << " <phi> <alpha> <k> <fileName> <p> <gamma> <b>" << endl;
@@ -561,7 +445,7 @@ int main(int argc, const char * argv[]){
     double b = atof(argv[7]);
     int k = atoi(argv[3]);
     double p = atof(argv[5]);
-    /* Inizializza il dataset da leggere */
+    
     read_graph("../Datasets/"+fileName+".txt");
 
     
@@ -579,7 +463,7 @@ int main(int argc, const char * argv[]){
     
     //gridSearchCreditsAlgorithm(fileName, gamma,b,p);
 
-    cout << "Tutti gli esperimenti completati con successo!" << endl;
+    cout << "Experiments completed!" << endl;
     return 0;
 }
 
