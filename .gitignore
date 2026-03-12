@@ -1,8 +1,7 @@
 Datasets/
-Esperimenti/
-Codici/Sequences/  
-Codici/plots
-Esperimenti copy
+Experiments/
+Codes/Sequences/  
+Codes/plots
 plots
 Sequences
 a.out
@@ -10,5 +9,6 @@ a.out
 *.exe
 *.txt
 .DS_Store
+./Codes/DS_Store
 
 .vscode/
