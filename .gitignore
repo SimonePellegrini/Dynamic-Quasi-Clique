@@ -9,5 +9,6 @@ a.out
 *.o
 *.exe
 *.txt
+.DS_Store
 
 .vscode/
