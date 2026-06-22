@@ -6,6 +6,7 @@ This repository contains a C++ experimental framework designed to analyze and co
 
 The executable strictly expects the following relative directory structure to locate datasets, load sequences, and save experimental results. **Ensure these folders exist before running the code:**
 
+```
 text
 ├── Datasets/
 │   └── <fileName>.txt               # Initial static input graph
@@ -24,6 +25,7 @@ text
     ├── FastNBSim.c++
     ├── CreditsAlgorithm.cpp
     └── ... (other headers/source files)
+```
     
 Requirements:
 A C++ compiler with C++11 support (or higher) to utilize libraries like <chrono>, <random>, and <unordered_map>.
