@@ -516,32 +516,21 @@ void experimentDynamicPerformance(string fileName, float gamma, float b, float p
 }
 
 
-void gridSearchK(string fileName, float phi, float alpha, float gamma, float b, float prob, string strategy = "standard", string type = "erdos", int q_freq = 10,bool run_dyn=true) {
+void runExperiments(string fileName, float phi, float alpha, float gamma, float b, float prob, string strategy = "standard", string type = "erdos", int q_freq = 10,bool run_dyn=true, int k) {
     if(run_dyn){
         cout << "Running dynamic baseline..." << endl;
         experimentDynamicOnly(fileName, gamma, b, prob, 0.1, strategy, type);
         experimentDynamicPerformance(fileName, gamma, b, prob, strategy, type, q_freq);
     }
-    vector<int> k_values = {16,32,64,128};
-    vector<double> alpha_values = {0.1,0.3,0.6};
-    vector<double> phi_values = {0.8};
-
-    for (int k : k_values) {
-        for(double alpha : alpha_values){
-            for(double phi : phi_values){
-                if(prob!=0){
-                    experimentCreditsOnly(fileName, phi, alpha, gamma, b, k, prob, 0.1, strategy, type);
-                    experimentCreditsPerformance(fileName, phi, alpha, gamma, b, k, prob, strategy, type, q_freq);
-                }
-                else{
-                    experimentCreditsOnlyOnlyIns(fileName, phi, alpha, gamma, b, k, prob, 0.1, strategy, type);
-                    experimentCreditsPerformanceOnlyIns(fileName, phi, alpha, gamma, b, k, prob, strategy, type, q_freq);
-                }
-            }
-        }    
-    }
     
-    cout << "Grid search completed." << endl;
+    if(prob!=0){
+        experimentCreditsOnly(fileName, phi, alpha, gamma, b, k, prob, 0.1, strategy, type);
+        experimentCreditsPerformance(fileName, phi, alpha, gamma, b, k, prob, strategy, type, q_freq);
+    }
+    else{
+        experimentCreditsOnlyOnlyIns(fileName, phi, alpha, gamma, b, k, prob, 0.1, strategy, type);
+        experimentCreditsPerformanceOnlyIns(fileName, phi, alpha, gamma, b, k, prob, strategy, type, q_freq);
+    }
 }
 
 
@@ -561,24 +550,15 @@ int main(int argc, const char * argv[]){
     double b = atof(argv[7]);
     int k = atoi(argv[3]);
     double p = atof(argv[5]);
+    bool run_dynamic_baseline = atoi(argv[8]);
+    string strategy = argv[9];
+    string type = argv[10];
     /* Inizializza il dataset da leggere */
     read_graph("../Datasets/"+fileName+".txt");
-
     
-
     cout<<fileName<<endl;
-    //cout<<"standard"<<endl;
-    //countCreditsAndGammeDegree(fileName,phi,alpha,gamma,b,k,p);
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"standard","erdos",10,false);
-    cout<<"erdos"<<endl;
-    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","erdos");
-    cout<<"rich"<<endl;
-    gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","rich",10,false);
-    cout<<"power"<<endl;
-    //gridSearchK(fileName,phi,alpha,gamma,b,p,"mixed","power");
-    
-    //gridSearchCreditsAlgorithm(fileName, gamma,b,p);
-
+    runExperiments(fileName,phi,alpha,gamma,b,p,strategy,type,10,run_dynamic_baseline,k);
+   
     cout << "Tutti gli esperimenti completati con successo!" << endl;
     return 0;
 }
