@@ -23,7 +23,7 @@ The executable strictly expects the following relative directory structure to lo
     ├── Sequences/
     │   ├── StandardSequences/           # e.g., <fileName>_<prob>.txt
     │   └── MixedSequences/              # e.g., <fileName>_<prob>_<type>.txt
-    ├── main.cpp                         # Main experimental driver
+    ├── main.c++                         # Main experimental driver
     ├── DynamicNBSim.c++
     ├── FastNBSim.c++
     ├── CreditsAlgorithm.cpp
@@ -39,7 +39,7 @@ The executable strictly expects the following relative directory structure to lo
 **Compilation:** It is highly recommended to compile with the `-O3` optimization flag, as the code measures exact execution times for benchmarking.
 
 ```bash
-g++ -O3 main.cpp -o run_experiments
+g++ -O3 main.c++ -o run_experiments
 ```
 
 ---
@@ -91,4 +91,4 @@ All results are automatically serialized to `.csv` and `.txt` files in the `../E
 | `number_of_credits_*.csv` | Internal credit counts |
 | `gamma_degree_*.csv` | Gamma-degree metrics |
 
-> **Note:** All artificial datasets must be generated using `generateSequences.py` before running experiments.
+> **Note:** All datasets must be preprocess using `generateSequences.py` before running experiments.
